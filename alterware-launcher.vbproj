@@ -12,7 +12,7 @@
 	<PackageProjectUrl>https://github.com/mxve/alterware-launcher</PackageProjectUrl>
 	<PackageIcon>icon.png</PackageIcon>
 	<RepositoryType>git</RepositoryType>
-	<FileVersion>0.1.0</FileVersion>
+	<FileVersion>0.1.1</FileVersion>
 	<AssemblyVersion>0.1.0</AssemblyVersion>
   </PropertyGroup>
 
