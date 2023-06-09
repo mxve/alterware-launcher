@@ -14,7 +14,8 @@ Module Program
             wc.DownloadFile(master & remote_path & filename, filename)
         End Using
         Console.WriteLine("Starting " & game)
-        Process.Start(filename)
+        Dim p As Process = Process.Start(filename)
+        p.WaitForExit()
         End
     End Sub
 
