@@ -1,0 +1,24 @@
+[package]
+name = "alterware-launcher"
+version = "0.2.0"
+edition = "2021"
+build = "res/build.rs"
+
+[profile.release]
+opt-level = "s"
+panic = "abort"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+http_req = { version = "0.9.0", default-features = false, features = [
+    "rust-tls",
+] }
+
+[build-dependencies]
+winres = "0.1.12"
+
+[package.metadata.winres]
+OriginalFilename = "alterware-launcher.exe"
+FileDescription = "AlterWare mod updater & launcher"
+ProductName = "AlterWare Launcher"
