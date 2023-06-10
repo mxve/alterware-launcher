@@ -9,7 +9,7 @@ pub fn get_body(url: &str) -> Vec<u8> {
     res
 }
 
-pub fn _get_body_string(url: &str) -> String {
+pub fn get_body_string(url: &str) -> String {
     String::from_utf8(get_body(url)).unwrap()
 }
 
