@@ -41,13 +41,18 @@ fn download_and_launch(url: &str, file_path: &PathBuf, hash: Option<String>) {
         }
     }
 
+    // clippy will suggest using if let or match, but i prefer it being somewhat readable
+    #[allow(clippy::unnecessary_unwrap)]
     if file_path.exists() && hash.is_some() {
         let sha1_local = file_get_sha1(file_path).to_lowercase();
         let sha1_remote = hash.unwrap().to_lowercase();
         if sha1_local != sha1_remote {
-            println!("Local hash: {}", sha1_local);
-            println!("Remote hash: {}", sha1_remote);
-            println!("Updating {}...", file_path.display());
+            println!(
+                "Updating {}...\nLocal hash: {}\nRemote hash: {}",
+                file_path.display(),
+                sha1_local,
+                sha1_remote
+            );
             http::download_file(url, file_path);
         }
     } else {
@@ -65,7 +70,12 @@ fn download_and_launch(url: &str, file_path: &PathBuf, hash: Option<String>) {
 
 fn get_hash(game: &Game) -> Option<String> {
     let cdn_info: Vec<CdnFile> = serde_json::from_str(&http::get_body_string(
-        format!("{}/files.json?{}", MASTER, rand::Rng::gen_range(&mut rand::thread_rng(), 0..1000)).as_str(),
+        format!(
+            "{}/files.json?{}",
+            MASTER,
+            rand::Rng::gen_range(&mut rand::thread_rng(), 0..1000)
+        )
+        .as_str(),
     ))
     .unwrap();
 
@@ -97,9 +107,15 @@ fn main() {
     for g in GAMES.iter() {
         if g.client == game {
             download_and_launch(
-                &format!("{}/{}/{}.exe?{}", MASTER, g.engine, g.client, rand::Rng::gen_range(&mut rand::thread_rng(), 0..1000)),
+                &format!(
+                    "{}/{}/{}.exe?{}",
+                    MASTER,
+                    g.engine,
+                    g.client,
+                    rand::Rng::gen_range(&mut rand::thread_rng(), 0..1000)
+                ),
                 &PathBuf::from(format!("{}.exe", g.client)),
-                get_hash(g)
+                get_hash(g),
             );
             return;
         }
