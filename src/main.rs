@@ -8,30 +8,14 @@ struct CdnFile {
     hash: String,
 }
 
+#[derive(serde::Deserialize, serde::Serialize)]
 struct Game<'a> {
     engine: &'a str,
     client: &'a str,
-    references: &'a [&'a str],
+    references: Vec<&'a str>,
 }
 
 const MASTER: &str = "https://master.alterware.dev";
-const GAMES: [Game; 3] = [
-    Game {
-        engine: "iw4",
-        client: "iw4-sp",
-        references: &["iw4sp.exe", "iw4mp.exe"],
-    },
-    Game {
-        engine: "iw5",
-        client: "iw5-mod",
-        references: &["iw5sp.exe", "iw5mp.exe", "iw5mp_server.exe"],
-    },
-    Game {
-        engine: "iw6",
-        client: "iw6-mod",
-        references: &["iw6sp64_ship.exe", "iw6mp64_ship.exe"],
-    },
-];
 
 fn file_get_sha1(path: &PathBuf) -> String {
     let mut sha1 = sha1_smol::Sha1::new();
@@ -110,11 +94,15 @@ fn launch(file_path: &PathBuf) {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+
+    let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());
+    let games: Vec<Game> = serde_json::from_str(&games_json).unwrap();
+
     let mut game: String = String::new();
     if args.len() > 1 {
         game = String::from(&args[1]);
     } else {
-        'main: for g in GAMES.iter() {
+        'main: for g in games.iter() {
             for r in g.references.iter() {
                 if std::path::Path::new(r).exists() {
                     game = String::from(g.client);
@@ -124,9 +112,9 @@ fn main() {
         }
     }
 
-    for g in GAMES.iter() {
+    for g in games.iter() {
         if g.client == game {
-            update(&g);
+            update(g);
             launch(&PathBuf::from(format!("{}.exe", g.client)));
             return;
         }
