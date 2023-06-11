@@ -15,7 +15,7 @@ struct Game<'a> {
 }
 
 const MASTER: &str = "https://master.alterware.dev";
-const GAMES: [Game; 2] = [
+const GAMES: [Game; 3] = [
     Game {
         engine: "iw4",
         client: "iw4-sp",
@@ -26,6 +26,11 @@ const GAMES: [Game; 2] = [
         client: "iw5-mod",
         references: &["iw5sp.exe", "iw5mp.exe", "iw5mp_server.exe"],
     },
+    Game {
+        engine: "iw6",
+        client: "iw6-mod",
+        references: &["iw6sp64_ship.exe", "iw6mp64_ship.exe"],
+    },
 ];
 
 fn file_get_sha1(path: &PathBuf) -> String {
@@ -34,41 +39,7 @@ fn file_get_sha1(path: &PathBuf) -> String {
     sha1.digest().to_string()
 }
 
-fn download_and_launch(url: &str, file_path: &PathBuf, hash: Option<String>) {
-    if let Some(parent) = file_path.parent() {
-        if !parent.exists() {
-            fs::create_dir_all(parent).unwrap();
-        }
-    }
-
-    // clippy will suggest using if let or match, but i prefer it being somewhat readable
-    #[allow(clippy::unnecessary_unwrap)]
-    if file_path.exists() && hash.is_some() {
-        let sha1_local = file_get_sha1(file_path).to_lowercase();
-        let sha1_remote = hash.unwrap().to_lowercase();
-        if sha1_local != sha1_remote {
-            println!(
-                "Updating {}...\nLocal hash: {}\nRemote hash: {}",
-                file_path.display(),
-                sha1_local,
-                sha1_remote
-            );
-            http::download_file(url, file_path);
-        }
-    } else {
-        println!("Downloading {}...", file_path.display());
-        http::download_file(url, file_path);
-    }
-
-    println!("Launching {}...", file_path.display());
-    std::process::Command::new(file_path)
-        .spawn()
-        .unwrap()
-        .wait()
-        .unwrap();
-}
-
-fn get_hash(game: &Game) -> Option<String> {
+fn update(game: &Game) {
     let cdn_info: Vec<CdnFile> = serde_json::from_str(&http::get_body_string(
         format!(
             "{}/files.json?{}",
@@ -79,13 +50,62 @@ fn get_hash(game: &Game) -> Option<String> {
     ))
     .unwrap();
 
+    let mut files_to_update: Vec<CdnFile> = Vec::new();
     for file in cdn_info {
-        if file.name == format!("{}/{}.exe", game.engine, game.client) {
-            return Some(file.hash);
+        if file.name.starts_with(game.engine) {
+            files_to_update.push(file);
         }
     }
 
-    None
+    for file in files_to_update {
+        let file_path = PathBuf::from(&file.name.replace(&format!("{}/", game.engine), ""));
+        if file_path.exists() {
+            let sha1_local = file_get_sha1(&file_path).to_lowercase();
+            let sha1_remote = file.hash.to_lowercase();
+            if sha1_local != sha1_remote {
+                println!(
+                    "Updating {}...\nLocal hash: {}\nRemote hash: {}",
+                    file_path.display(),
+                    sha1_local,
+                    sha1_remote
+                );
+                http::download_file(
+                    &format!(
+                        "{}/{}?{}",
+                        MASTER,
+                        file.name,
+                        rand::Rng::gen_range(&mut rand::thread_rng(), 0..1000)
+                    ),
+                    &file_path,
+                );
+            }
+        } else {
+            println!("Downloading {}...", file_path.display());
+            if let Some(parent) = file_path.parent() {
+                if !parent.exists() {
+                    fs::create_dir_all(parent).unwrap();
+                }
+            }
+            http::download_file(
+                &format!(
+                    "{}/{}?{}",
+                    MASTER,
+                    file.name,
+                    rand::Rng::gen_range(&mut rand::thread_rng(), 0..1000)
+                ),
+                &file_path,
+            );
+        }
+    }
+}
+
+fn launch(file_path: &PathBuf) {
+    println!("Launching {}...", file_path.display());
+    std::process::Command::new(file_path)
+        .spawn()
+        .unwrap()
+        .wait()
+        .unwrap();
 }
 
 fn main() {
@@ -106,17 +126,8 @@ fn main() {
 
     for g in GAMES.iter() {
         if g.client == game {
-            download_and_launch(
-                &format!(
-                    "{}/{}/{}.exe?{}",
-                    MASTER,
-                    g.engine,
-                    g.client,
-                    rand::Rng::gen_range(&mut rand::thread_rng(), 0..1000)
-                ),
-                &PathBuf::from(format!("{}.exe", g.client)),
-                get_hash(g),
-            );
+            update(&g);
+            launch(&PathBuf::from(format!("{}.exe", g.client)));
             return;
         }
     }
