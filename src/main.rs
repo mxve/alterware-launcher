@@ -131,4 +131,9 @@ fn main() {
             return;
         }
     }
+
+    println!("Game not found!");
+    println!("Place the launcher in the game folder, if that doesn't work specify the client on the command line (ex. alterware-launcher.exe iw4-sp)");
+    println!("Press enter to exit...");
+    std::io::stdin().read_line(&mut String::new()).unwrap();
 }
