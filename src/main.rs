@@ -93,10 +93,18 @@ fn launch(file_path: &PathBuf) {
 }
 
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
+    let mut args: Vec<String> = std::env::args().collect();
 
     let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());
     let games: Vec<Game> = serde_json::from_str(&games_json).unwrap();
+
+    let mut update_only = false;
+    if args.contains(&String::from("update")) {
+        update_only = true;
+        args.iter()
+            .position(|r| r == "update")
+            .map(|e| args.remove(e));
+    }
 
     let mut game: String = String::new();
     if args.len() > 1 {
@@ -115,6 +123,9 @@ fn main() {
     for g in games.iter() {
         if g.client == game {
             update(g);
+            if update_only {
+                return;
+            }
             launch(&PathBuf::from(format!("{}.exe", g.client)));
             return;
         }
