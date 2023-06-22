@@ -57,6 +57,10 @@ fn update_binary() {}
 // allow dead code, function is only called if not debug env
 #[allow(dead_code)]
 fn update_self() {
+    if PathBuf::from("update.bat").exists() {
+        fs::remove_file("update.bat").unwrap();
+    }
+
     let platform = if cfg!(windows) {
         "alterware-launcher-x86_64-pc-windows-msvc.zip"
     } else {
