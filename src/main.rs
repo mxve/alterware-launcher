@@ -16,86 +16,6 @@ struct Game<'a> {
 }
 
 const MASTER: &str = "https://master.alterware.dev";
-const REPO: &str = "mxve/alterware-launcher";
-
-fn version_str_to_int(version: &str) -> u16 {
-    version.replace(['v', '.'], "").parse::<u16>().unwrap()
-}
-
-#[cfg(windows)]
-fn extract_archive() {
-    let mut archive = zip::ZipArchive::new(fs::File::open("alterware_update").unwrap()).unwrap();
-    archive.extract("alterware-update").unwrap();
-}
-
-#[cfg(windows)]
-fn update_binary() {
-    let update_script = "
-        @echo off
-        del alterware-launcher.exe
-        move alterware-update\\alterware-launcher.exe alterware-launcher.exe
-        rmdir /s /q alterware-update
-        start alterware-launcher.exe
-        exit"
-        .replace("        ", "");
-
-    fs::write("update.bat", update_script).unwrap();
-    std::process::Command::new("update.bat")
-        .spawn()
-        .unwrap()
-        .wait()
-        .unwrap();
-    std::process::exit(0);
-}
-
-#[cfg(not(windows))]
-fn extract_archive() {}
-
-#[cfg(not(windows))]
-fn update_binary() {}
-
-// allow dead code, function is only called if not debug env
-#[allow(dead_code)]
-fn update_self() {
-    if PathBuf::from("update.bat").exists() {
-        fs::remove_file("update.bat").unwrap();
-    }
-
-    let platform = if cfg!(windows) {
-        "alterware-launcher-x86_64-pc-windows-msvc.zip"
-    } else {
-        "unknown"
-    };
-
-    if platform == "unknown" {
-        println!("Unsupported platform, can't perform self-update!");
-        return;
-    }
-
-    let current_version = version_str_to_int(env!("CARGO_PKG_VERSION"));
-
-    let github_body = http::get_body_string(
-        format!("https://api.github.com/repos/{}/releases/latest", REPO).as_str(),
-    );
-    let github_json: serde_json::Value = serde_json::from_str(&github_body).unwrap();
-    let latest_version = version_str_to_int(github_json["tag_name"].as_str().unwrap());
-
-    if latest_version > current_version {
-        println!("Updating launcher..");
-        let download_url = format!(
-            "https://github.com/{}/releases/download/{}/{}",
-            REPO,
-            github_json["tag_name"].as_str().unwrap(),
-            platform
-        );
-        println!("Downloading {}...", download_url);
-        http::download_file(&download_url, &PathBuf::from("alterware_update"));
-        println!("Extracting update...");
-        extract_archive();
-        fs::remove_file("alterware_update").unwrap();
-        update_binary();
-    }
-}
 
 fn file_get_sha1(path: &PathBuf) -> String {
     let mut sha1 = sha1_smol::Sha1::new();
@@ -173,10 +93,6 @@ fn launch(file_path: &PathBuf) {
 }
 
 fn main() {
-    #[cfg(not(debug_assertions))]
-    #[cfg(windows)]
-    update_self();
-
     let mut args: Vec<String> = std::env::args().collect();
 
     let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());
