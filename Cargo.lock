@@ -51,9 +51,9 @@ dependencies = [
 
 [[package]]
 name = "http_req"
-version = "0.9.1"
+version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5825a38a94c3aff23ea7f60572726829ef055ca02fc64899c3e2e7db2ce4f03f"
+checksum = "9f680177f2ebe4aabd573d07b322d15a5e0fbc97cd739fd627b08043c89041f8"
 dependencies = [
  "rustls",
  "unicase",
