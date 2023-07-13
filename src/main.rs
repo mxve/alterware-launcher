@@ -20,8 +20,8 @@ const MASTER: &str = "https://master.alterware.dev";
 
 fn get_cache_buster() -> u64 {
     match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(n) => return n.as_secs(),
-        Err(_) => return 1,
+        Ok(n) => n.as_secs(),
+        Err(_) => 1,
     }
 }
 
