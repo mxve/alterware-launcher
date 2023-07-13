@@ -1,5 +1,6 @@
 mod http;
 use std::{fs, path::PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(serde::Deserialize, serde::Serialize)]
 struct CdnFile {
@@ -17,6 +18,13 @@ struct Game<'a> {
 
 const MASTER: &str = "https://master.alterware.dev";
 
+fn get_cache_buster() -> u64 {
+    match SystemTime::now().duration_since(UNIX_EPOCH) {
+        Ok(n) => return n.as_secs(),
+        Err(_) => return 1,
+    }
+}
+
 fn file_get_sha1(path: &PathBuf) -> String {
     let mut sha1 = sha1_smol::Sha1::new();
     sha1.update(&fs::read(path).unwrap());
@@ -28,7 +36,7 @@ fn update(game: &Game) {
         format!(
             "{}/files.json?{}",
             MASTER,
-            rand::Rng::gen_range(&mut rand::thread_rng(), 0..1000)
+            get_cache_buster()
         )
         .as_str(),
     ))
@@ -58,7 +66,7 @@ fn update(game: &Game) {
                         "{}/{}?{}",
                         MASTER,
                         file.name,
-                        rand::Rng::gen_range(&mut rand::thread_rng(), 0..1000)
+                        get_cache_buster()
                     ),
                     &file_path,
                 );
@@ -75,7 +83,7 @@ fn update(game: &Game) {
                     "{}/{}?{}",
                     MASTER,
                     file.name,
-                    rand::Rng::gen_range(&mut rand::thread_rng(), 0..1000)
+                    get_cache_buster()
                 ),
                 &file_path,
             );
