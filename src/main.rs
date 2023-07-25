@@ -1,6 +1,6 @@
 mod http;
-use std::{fs, path::PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::{fs, path::PathBuf};
 
 #[derive(serde::Deserialize, serde::Serialize)]
 struct CdnFile {
@@ -25,7 +25,7 @@ fn get_cache_buster() -> u64 {
     }
 }
 
-fn file_get_sha1(path: &PathBuf) -> String {
+fn get_file_sha1(path: &PathBuf) -> String {
     let mut sha1 = sha1_smol::Sha1::new();
     sha1.update(&fs::read(path).unwrap());
     sha1.digest().to_string()
@@ -33,26 +33,18 @@ fn file_get_sha1(path: &PathBuf) -> String {
 
 fn update(game: &Game) {
     let cdn_info: Vec<CdnFile> = serde_json::from_str(&http::get_body_string(
-        format!(
-            "{}/files.json?{}",
-            MASTER,
-            get_cache_buster()
-        )
-        .as_str(),
+        format!("{}/files.json?{}", MASTER, get_cache_buster()).as_str(),
     ))
     .unwrap();
 
-    let mut files_to_update: Vec<CdnFile> = Vec::new();
     for file in cdn_info {
-        if file.name.starts_with(game.engine) {
-            files_to_update.push(file);
+        if !file.name.starts_with(game.engine) {
+            continue;
         }
-    }
 
-    for file in files_to_update {
         let file_path = PathBuf::from(&file.name.replace(&format!("{}/", game.engine), ""));
         if file_path.exists() {
-            let sha1_local = file_get_sha1(&file_path).to_lowercase();
+            let sha1_local = get_file_sha1(&file_path).to_lowercase();
             let sha1_remote = file.hash.to_lowercase();
             if sha1_local != sha1_remote {
                 println!(
@@ -62,12 +54,7 @@ fn update(game: &Game) {
                     sha1_remote
                 );
                 http::download_file(
-                    &format!(
-                        "{}/{}?{}",
-                        MASTER,
-                        file.name,
-                        get_cache_buster()
-                    ),
+                    &format!("{}/{}?{}", MASTER, file.name, get_cache_buster()),
                     &file_path,
                 );
             }
@@ -79,12 +66,7 @@ fn update(game: &Game) {
                 }
             }
             http::download_file(
-                &format!(
-                    "{}/{}?{}",
-                    MASTER,
-                    file.name,
-                    get_cache_buster()
-                ),
+                &format!("{}/{}?{}", MASTER, file.name, get_cache_buster()),
                 &file_path,
             );
         }
@@ -95,9 +77,9 @@ fn launch(file_path: &PathBuf) {
     println!("Launching {}...", file_path.display());
     std::process::Command::new(file_path)
         .spawn()
-        .unwrap()
+        .expect("Failed to launch the game")
         .wait()
-        .unwrap();
+        .expect("Failed to wait for the game process to finish");
 }
 
 fn main() {
