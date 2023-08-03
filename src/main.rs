@@ -1,6 +1,8 @@
 mod http;
+use semver::Version;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{fs, path::PathBuf};
+use std::{thread, time};
 
 #[derive(serde::Deserialize, serde::Serialize)]
 struct CdnFile {
@@ -17,6 +19,7 @@ struct Game<'a> {
 }
 
 const MASTER: &str = "https://master.alterware.dev";
+const REPO: &str = "mxve/alterware-launcher";
 
 fn get_cache_buster() -> u64 {
     match SystemTime::now().duration_since(UNIX_EPOCH) {
@@ -29,6 +32,28 @@ fn get_file_sha1(path: &PathBuf) -> String {
     let mut sha1 = sha1_smol::Sha1::new();
     sha1.update(&fs::read(path).unwrap());
     sha1.digest().to_string()
+}
+
+fn check_for_launcher_update() {
+    let current_version: Version = Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
+    let github_body = http::get_body_string(
+        format!("https://api.github.com/repos/{}/releases/latest", REPO).as_str(),
+    );
+    let github_json: serde_json::Value = serde_json::from_str(&github_body).unwrap();
+    let latest_version = github_json["tag_name"]
+        .to_string()
+        .replace(['v', '"'].as_ref(), "");
+    let latest_version = Version::parse(&latest_version).unwrap();
+
+    if current_version < latest_version {
+        println!(
+            "A new version of the AlterWare launcher is available: {}",
+            latest_version
+        );
+        println!("Download it at https://github.com/{}/releases/latest", REPO);
+        println!("Launching in 10 seconds..");
+        thread::sleep(time::Duration::from_secs(10));
+    }
 }
 
 fn update(game: &Game) {
@@ -83,6 +108,8 @@ fn launch(file_path: &PathBuf) {
 }
 
 fn main() {
+    check_for_launcher_update();
+
     let mut args: Vec<String> = std::env::args().collect();
 
     let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());
