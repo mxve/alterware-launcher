@@ -2,6 +2,8 @@ mod http;
 #[cfg(windows)]
 use mslnk::ShellLink;
 use semver::Version;
+#[cfg(not(windows))]
+use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{fs, path::PathBuf};
 #[cfg(windows)]
@@ -62,10 +64,7 @@ fn self_update_available() -> bool {
 #[cfg(not(windows))]
 fn self_update() {
     if self_update_available() {
-        println!(
-            "A new version of the AlterWare launcher is available: {}",
-            latest_version
-        );
+        println!("A new version of the AlterWare launcher is available.");
         println!("Download it at https://github.com/{}/releases/latest", REPO);
         println!("Launching in 10 seconds..");
         thread::sleep(time::Duration::from_secs(10));
