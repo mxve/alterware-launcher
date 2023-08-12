@@ -241,9 +241,15 @@ fn launch(file_path: &PathBuf) {
 }
 
 fn main() {
-    self_update();
-
     let mut args: Vec<String> = std::env::args().collect();
+
+    if !args.contains(&String::from("skip-launcher-update")) {
+        self_update();
+    } else {
+        args.iter()
+            .position(|r| r == "skip-launcher-update")
+            .map(|e| args.remove(e));
+    }
 
     let games_json =
         http::get_body_string(format!("{}/games.json?{}", MASTER, get_cache_buster()).as_str());
