@@ -112,6 +112,7 @@ fn launch(file_path: &PathBuf) {
         .expect("Failed to wait for the game process to finish");
 }
 
+#[cfg(windows)]
 fn get_input() -> String {
     let mut input = String::new();
     std::io::stdin().read_line(&mut input).unwrap();
