@@ -4,7 +4,6 @@ use mslnk::ShellLink;
 use semver::Version;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{fs, path::PathBuf};
-use std::{thread, time};
 #[cfg(windows)]
 use steamlocate::SteamDir;
 
@@ -39,7 +38,14 @@ fn get_file_sha1(path: &PathBuf) -> String {
     sha1.digest().to_string()
 }
 
-fn check_for_launcher_update() {
+#[cfg(windows)]
+fn get_input() -> String {
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+    input.trim().to_string()
+}
+
+fn self_update_available() -> bool {
     let current_version: Version = Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
     let github_body = http::get_body_string(
         format!("https://api.github.com/repos/{}/releases/latest", REPO).as_str(),
@@ -50,7 +56,12 @@ fn check_for_launcher_update() {
         .replace(['v', '"'].as_ref(), "");
     let latest_version = Version::parse(&latest_version).unwrap();
 
-    if current_version < latest_version {
+    current_version < latest_version
+}
+
+#[cfg(not(windows))]
+fn self_update() {
+    if self_update_available() {
         println!(
             "A new version of the AlterWare launcher is available: {}",
             latest_version
@@ -59,6 +70,124 @@ fn check_for_launcher_update() {
         println!("Launching in 10 seconds..");
         thread::sleep(time::Duration::from_secs(10));
     }
+}
+
+#[cfg(windows)]
+fn self_update() {
+    let working_dir = std::env::current_dir().unwrap();
+    let files = fs::read_dir(&working_dir).unwrap();
+
+    for file in files {
+        let file = file.unwrap();
+        let file_name = file.file_name().into_string().unwrap();
+
+        if file_name.contains("alterware-launcher")
+            && (file_name.contains(".__relocated__.exe")
+                || file_name.contains(".__selfdelete__.exe"))
+        {
+            fs::remove_file(file.path()).unwrap();
+        }
+    }
+
+    if self_update_available() {
+        println!("Performing launcher self-update.");
+        println!("If you run into any issues, please download the latest version at https://github.com/{}/releases/latest", REPO);
+
+        let update_binary = PathBuf::from("alterware-launcher-update.exe");
+        let file_path = working_dir.join(&update_binary);
+
+        if update_binary.exists() {
+            fs::remove_file(&update_binary).unwrap();
+        }
+
+        http::download_file(
+            &format!(
+                "https://github.com/{}/releases/latest/download/alterware-launcher.exe",
+                REPO
+            ),
+            &file_path,
+        );
+
+        if !file_path.exists() {
+            println!("Failed to download launcher update.");
+            return;
+        }
+
+        self_replace::self_replace("alterware-launcher-update.exe").unwrap();
+        fs::remove_file(&file_path).unwrap();
+        println!("Launcher updated. Please run it again.");
+        std::io::stdin().read_line(&mut String::new()).unwrap();
+        std::process::exit(0);
+    }
+}
+
+#[cfg(windows)]
+fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
+    let mut installed_games = Vec::new();
+    let mut steamdir = SteamDir::locate().unwrap();
+
+    for game in games {
+        if let Some(app) = steamdir.app(&game.app_id) {
+            installed_games.push((game.app_id, PathBuf::from(&app.path)));
+        }
+    }
+
+    installed_games
+}
+
+#[cfg(windows)]
+fn windows_launcher_install(games: &Vec<Game>) {
+    println!("No game specified/found. Checking for installed Steam games..");
+    let installed_games = get_installed_games(games);
+
+    if !installed_games.is_empty() {
+        println!("Installed games:");
+
+        for (id, path) in installed_games.iter() {
+            println!("{}: {}", id, path.display());
+        }
+
+        println!("Enter the ID of the game you want to install the AlterWare client for:");
+        let input: u32 = get_input().parse().unwrap();
+
+        for (id, path) in installed_games.iter() {
+            if *id == input {
+                let game = games.iter().find(|&g| g.app_id == input).unwrap();
+
+                let launcher_path = std::env::current_exe().unwrap();
+                fs::copy(launcher_path, path.join("alterware-launcher.exe")).unwrap();
+                println!("Launcher copied to {}", path.display());
+
+                println!("Create Desktop shortcut? (Y/n)");
+                let input = get_input().to_ascii_lowercase();
+
+                if input == "y" || input.is_empty() {
+                    let desktop = PathBuf::from(&format!(
+                        "{}\\Desktop",
+                        std::env::var("USERPROFILE").unwrap()
+                    ));
+
+                    let target = path.join("alterware-launcher.exe");
+                    let lnk = desktop.join(format!("{}.lnk", game.client));
+
+                    let mut sl = ShellLink::new(target).unwrap();
+                    sl.set_icon_location(Some(
+                        path.join(format!("{}.exe", game.client))
+                            .to_string_lossy()
+                            .into_owned(),
+                    ));
+                    sl.create_lnk(lnk).unwrap();
+                }
+
+                break;
+            }
+        }
+
+        std::process::exit(0);
+    }
+
+    println!("No installed Steam games found. Please install a supported game first or place the launcher in the game folder.");
+    std::process::exit(0);
 }
 
 fn update(game: &Game) {
@@ -112,89 +241,13 @@ fn launch(file_path: &PathBuf) {
         .expect("Failed to wait for the game process to finish");
 }
 
-#[cfg(windows)]
-fn get_input() -> String {
-    let mut input = String::new();
-    std::io::stdin().read_line(&mut input).unwrap();
-    input.trim().to_string()
-}
-
-#[cfg(windows)]
-fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
-    let mut installed_games = Vec::new();
-    let mut steamdir = SteamDir::locate().unwrap();
-
-    for game in games {
-        if let Some(app) = steamdir.app(&game.app_id) {
-            installed_games.push((game.app_id, PathBuf::from(&app.path)));
-        }
-    }
-
-    installed_games
-}
-
-#[cfg(windows)]
-fn windows_launcher_install(games: &Vec<Game>) {
-    println!("No game specified/found. Checking for installed Steam games..");
-    let installed_games = get_installed_games(games);
-
-    if !installed_games.is_empty() {
-        println!("Installed games:");
-
-        for (id, path) in installed_games.iter() {
-            println!("{}: {}", id, path.display());
-        }
-
-        println!("Enter the ID of the game you want to install the AlterWare client for:");
-        let input: u32 = get_input().parse().unwrap();
-
-        for (id, path) in installed_games.iter() {
-            if *id == input {
-                let game = games.iter().find(|&g| g.app_id == input).unwrap();
-
-                // Copy the launcher to the game folder
-                let launcher_path = std::env::current_exe().unwrap();
-                fs::copy(launcher_path, path.join("alterware-launcher.exe")).unwrap();
-                println!("Launcher copied to {}", path.display());
-
-                println!("Create Desktop shortcut? (Y/n)");
-                let input = get_input().to_ascii_lowercase();
-
-                if input == "y" || input.is_empty() {
-                    let desktop = PathBuf::from(&format!(
-                        "{}\\Desktop",
-                        std::env::var("USERPROFILE").unwrap()
-                    ));
-
-                    let target = path.join("alterware-launcher.exe");
-                    let lnk = desktop.join(format!("{}.lnk", game.client));
-
-                    let mut sl = ShellLink::new(target).unwrap();
-                    sl.set_icon_location(Some(
-                        path.join(format!("{}.exe", game.client))
-                            .to_string_lossy()
-                            .into_owned(),
-                    ));
-                    sl.create_lnk(lnk).unwrap();
-                }
-
-                break;
-            }
-        }
-
-        std::process::exit(0);
-    }
-
-    println!("No installed Steam games found. Please install a supported game first or place the launcher in the game folder.");
-    std::process::exit(0);
-}
-
 fn main() {
-    check_for_launcher_update();
+    self_update();
 
     let mut args: Vec<String> = std::env::args().collect();
 
-    let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());
+    let games_json =
+        http::get_body_string(format!("{}/games.json?{}", MASTER, get_cache_buster()).as_str());
     let games: Vec<Game> = serde_json::from_str(&games_json).unwrap();
 
     let mut update_only = false;
