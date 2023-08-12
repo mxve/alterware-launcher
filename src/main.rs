@@ -2,10 +2,10 @@ mod http;
 #[cfg(windows)]
 use mslnk::ShellLink;
 use semver::Version;
-#[cfg(not(windows))]
-use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{fs, path::PathBuf};
+#[cfg(not(windows))]
+use std::{thread, time};
 #[cfg(windows)]
 use steamlocate::SteamDir;
 
