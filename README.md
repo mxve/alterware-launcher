@@ -8,3 +8,4 @@
 
 - Passing ```iw4-sp```, ```iw5-mod```, ```iw6-mod``` or ```s1-mod``` as the first argument will skip automatic game detection
 - Passing ```update``` will stop the launcher from launching the game
+- ```no-launcher-update``` skips self-update
