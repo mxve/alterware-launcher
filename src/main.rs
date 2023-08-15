@@ -3,7 +3,7 @@ mod http;
 use mslnk::ShellLink;
 use semver::Version;
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{fs, path::Path, path::PathBuf};
+use std::{fs, path::PathBuf};
 #[cfg(not(windows))]
 use std::{thread, time};
 #[cfg(windows)]
@@ -134,7 +134,7 @@ fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
 }
 
 #[cfg(windows)]
-fn setup_client_links(game: &Game, game_dir: &Path) {
+fn setup_client_links(game: &Game, game_dir: &PathBuf) {
     if game.client.len() > 1 {
         println!("Multiple clients installed, use the shortcuts (launch-<client>.lnk in the game directory or desktop shortcuts) to launch a specific client.");
     }
