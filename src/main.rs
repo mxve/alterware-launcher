@@ -40,7 +40,6 @@ fn get_file_sha1(path: &PathBuf) -> String {
     sha1.digest().to_string()
 }
 
-#[cfg(windows)]
 fn get_input() -> String {
     let mut input = String::new();
     std::io::stdin().read_line(&mut input).unwrap();
