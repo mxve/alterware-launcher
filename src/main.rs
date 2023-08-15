@@ -3,7 +3,7 @@ mod http;
 use mslnk::ShellLink;
 use semver::Version;
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{fs, path::PathBuf};
+use std::{fs, path::Path, path::PathBuf};
 #[cfg(not(windows))]
 use std::{thread, time};
 #[cfg(windows)]
@@ -19,7 +19,7 @@ struct CdnFile {
 #[derive(serde::Deserialize, serde::Serialize)]
 struct Game<'a> {
     engine: &'a str,
-    client: &'a str,
+    client: Vec<&'a str>,
     references: Vec<&'a str>,
     app_id: u32,
 }
@@ -135,6 +135,29 @@ fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
 }
 
 #[cfg(windows)]
+fn setup_client_links(game: &Game, game_dir: &Path) {
+    if game.client.len() > 1 {
+        println!("Multiple clients installed, use the specific shortcuts (launch-<client>.lnk in game directory or desktop shortcuts) to launch a specific client");
+    }
+
+    let target = game_dir.join("alterware-launcher.exe");
+
+    for c in game.client.iter() {
+        let lnk = game_dir.join(format!("launch-{}.lnk", c));
+
+        let mut sl = ShellLink::new(target.clone()).unwrap();
+        sl.set_arguments(Some(c.to_string()));
+        sl.set_icon_location(Some(
+            game_dir
+                .join(format!("{}.exe", c))
+                .to_string_lossy()
+                .into_owned(),
+        ));
+        sl.create_lnk(&lnk).unwrap();
+    }
+}
+
+#[cfg(windows)]
 fn windows_launcher_install(games: &Vec<Game>) {
     println!("No game specified/found. Checking for installed Steam games..");
     let installed_games = get_installed_games(games);
@@ -156,6 +179,7 @@ fn windows_launcher_install(games: &Vec<Game>) {
                 let launcher_path = std::env::current_exe().unwrap();
                 fs::copy(launcher_path, path.join("alterware-launcher.exe")).unwrap();
                 println!("Launcher copied to {}", path.display());
+                setup_client_links(game, path);
 
                 println!("Create Desktop shortcut? (Y/n)");
                 let input = get_input().to_ascii_lowercase();
@@ -167,15 +191,19 @@ fn windows_launcher_install(games: &Vec<Game>) {
                     ));
 
                     let target = path.join("alterware-launcher.exe");
-                    let lnk = desktop.join(format!("{}.lnk", game.client));
 
-                    let mut sl = ShellLink::new(target).unwrap();
-                    sl.set_icon_location(Some(
-                        path.join(format!("{}.exe", game.client))
-                            .to_string_lossy()
-                            .into_owned(),
-                    ));
-                    sl.create_lnk(lnk).unwrap();
+                    for c in game.client.iter() {
+                        let lnk = desktop.join(format!("{}.lnk", c));
+
+                        let mut sl = ShellLink::new(target.clone()).unwrap();
+                        sl.set_arguments(Some(c.to_string()));
+                        sl.set_icon_location(Some(
+                            path.join(format!("{}.exe", c))
+                                .to_string_lossy()
+                                .into_owned(),
+                        ));
+                        sl.create_lnk(lnk).unwrap();
+                    }
                 }
 
                 break;
@@ -270,7 +298,17 @@ fn main() {
         'main: for g in games.iter() {
             for r in g.references.iter() {
                 if std::path::Path::new(r).exists() {
-                    game = String::from(g.client);
+                    if g.client.len() > 1 {
+                        setup_client_links(g, &std::env::current_dir().unwrap());
+                        println!("Multiple clients available, please specify the ID of the game you want to launch:");
+                        println!("To skip this prompt use the launch-<client>.lnk shortcuts in the game folder.");
+                        for (i, c) in g.client.iter().enumerate() {
+                            println!("{}: {}", i, c);
+                        }
+                        game = String::from(g.client[get_input().parse::<usize>().unwrap()]);
+                        break 'main;
+                    }
+                    game = String::from(g.client[0]);
                     break 'main;
                 }
             }
@@ -278,13 +316,14 @@ fn main() {
     }
 
     for g in games.iter() {
-        if g.client == game {
-            update(g);
-            if update_only {
+        for c in g.client.iter() {
+            if c == &game {
+                update(g);
+                if !update_only {
+                    launch(&PathBuf::from(format!("{}.exe", c)));
+                }
                 return;
             }
-            launch(&PathBuf::from(format!("{}.exe", g.client)));
-            return;
         }
     }
 
