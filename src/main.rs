@@ -137,7 +137,7 @@ fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
 #[cfg(windows)]
 fn setup_client_links(game: &Game, game_dir: &Path) {
     if game.client.len() > 1 {
-        println!("Multiple clients installed, use the specific shortcuts (launch-<client>.lnk in game directory or desktop shortcuts) to launch a specific client");
+        println!("Multiple clients installed, use the shortcuts (launch-<client>.lnk in the game directory or desktop shortcuts) to launch a specific client.");
     }
 
     let target = game_dir.join("alterware-launcher.exe");
@@ -299,9 +299,12 @@ fn main() {
             for r in g.references.iter() {
                 if std::path::Path::new(r).exists() {
                     if g.client.len() > 1 {
+                        #[cfg(windows)]
                         setup_client_links(g, &std::env::current_dir().unwrap());
-                        println!("Multiple clients available, please specify the ID of the game you want to launch:");
-                        println!("To skip this prompt use the launch-<client>.lnk shortcuts in the game folder.");
+
+                        #[cfg(not(windows))]
+                        println!("Multiple clients installed, set the client as the first argument to launch a specific client.");
+
                         for (i, c) in g.client.iter().enumerate() {
                             println!("{}: {}", i, c);
                         }
