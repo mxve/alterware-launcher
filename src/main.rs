@@ -2,7 +2,6 @@ mod http;
 #[cfg(windows)]
 use mslnk::ShellLink;
 use semver::Version;
-use std::time::{SystemTime, UNIX_EPOCH};
 use std::{fs, path::PathBuf};
 #[cfg(not(windows))]
 use std::{thread, time};
@@ -26,13 +25,6 @@ struct Game<'a> {
 
 const MASTER: &str = "https://master.alterware.dev";
 const REPO: &str = "mxve/alterware-launcher";
-
-fn get_cache_buster() -> u64 {
-    match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(n) => n.as_secs(),
-        Err(_) => 1,
-    }
-}
 
 fn get_file_sha1(path: &PathBuf) -> String {
     let mut sha1 = sha1_smol::Sha1::new();
@@ -218,7 +210,7 @@ fn windows_launcher_install(games: &Vec<Game>) {
 
 fn update(game: &Game) {
     let cdn_info: Vec<CdnFile> = serde_json::from_str(&http::get_body_string(
-        format!("{}/files.json?{}", MASTER, get_cache_buster()).as_str(),
+        format!("{}/files.json", MASTER).as_str(),
     ))
     .unwrap();
 
@@ -238,10 +230,7 @@ fn update(game: &Game) {
                     sha1_local,
                     sha1_remote
                 );
-                http::download_file(
-                    &format!("{}/{}?{}", MASTER, file.name, get_cache_buster()),
-                    &file_path,
-                );
+                http::download_file(&format!("{}/{}", MASTER, file.name), &file_path);
             }
         } else {
             println!("Downloading {}...", file_path.display());
@@ -250,10 +239,7 @@ fn update(game: &Game) {
                     fs::create_dir_all(parent).unwrap();
                 }
             }
-            http::download_file(
-                &format!("{}/{}?{}", MASTER, file.name, get_cache_buster()),
-                &file_path,
-            );
+            http::download_file(&format!("{}/{}", MASTER, file.name), &file_path);
         }
     }
 }
@@ -278,8 +264,7 @@ fn main() {
             .map(|e| args.remove(e));
     }
 
-    let games_json =
-        http::get_body_string(format!("{}/games.json?{}", MASTER, get_cache_buster()).as_str());
+    let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());
     let games: Vec<Game> = serde_json::from_str(&games_json).unwrap();
 
     let mut update_only = false;
