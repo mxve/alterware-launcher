@@ -168,8 +168,12 @@ fn windows_launcher_install(games: &Vec<Game>) {
                 let game = games.iter().find(|&g| g.app_id == input).unwrap();
 
                 let launcher_path = std::env::current_exe().unwrap();
-                fs::copy(launcher_path, path.join("alterware-launcher.exe")).unwrap();
-                println!("Launcher copied to {}", path.display());
+                let target_path = path.join("alterware-launcher.exe");
+
+                if launcher_path != target_path {
+                    fs::copy(launcher_path, target_path).unwrap();
+                    println!("Launcher copied to {}", path.display());
+                }
                 setup_client_links(game, path);
 
                 println!("Create Desktop shortcut? (Y/n)");
