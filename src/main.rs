@@ -53,7 +53,7 @@ fn self_update_available() -> bool {
 }
 
 #[cfg(not(windows))]
-fn self_update() {
+fn self_update(_update_only: bool) {
     if self_update_available() {
         println!("A new version of the AlterWare launcher is available.");
         println!("Download it at https://github.com/{}/releases/latest", REPO);
