@@ -63,7 +63,7 @@ fn self_update() {
 }
 
 #[cfg(windows)]
-fn self_update() {
+fn self_update(update_only: bool) {
     let working_dir = std::env::current_dir().unwrap();
     let files = fs::read_dir(&working_dir).unwrap();
 
@@ -106,8 +106,10 @@ fn self_update() {
         self_replace::self_replace("alterware-launcher-update.exe").unwrap();
         fs::remove_file(&file_path).unwrap();
         println!("Launcher updated. Please run it again.");
-        std::io::stdin().read_line(&mut String::new()).unwrap();
-        std::process::exit(0);
+        if !update_only {
+            std::io::stdin().read_line(&mut String::new()).unwrap();
+        }
+        std::process::exit(101);
     }
 }
 
@@ -260,8 +262,16 @@ fn launch(file_path: &PathBuf) {
 fn main() {
     let mut args: Vec<String> = std::env::args().collect();
 
+    let mut update_only = false;
+    if args.contains(&String::from("update")) {
+        update_only = true;
+        args.iter()
+            .position(|r| r == "update")
+            .map(|e| args.remove(e));
+    }
+
     if !args.contains(&String::from("skip-launcher-update")) {
-        self_update();
+        self_update(update_only);
     } else {
         args.iter()
             .position(|r| r == "skip-launcher-update")
@@ -270,14 +280,6 @@ fn main() {
 
     let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());
     let games: Vec<Game> = serde_json::from_str(&games_json).unwrap();
-
-    let mut update_only = false;
-    if args.contains(&String::from("update")) {
-        update_only = true;
-        args.iter()
-            .position(|r| r == "update")
-            .map(|e| args.remove(e));
-    }
 
     let mut game: String = String::new();
     if args.len() > 1 {

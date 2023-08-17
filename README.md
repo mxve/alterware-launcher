@@ -9,3 +9,6 @@
 - Passing ```iw4-sp```, ```iw5-mod```, ```iw6-mod``` or ```s1-mod``` as the first argument will skip automatic game detection
 - Passing ```update``` will stop the launcher from launching the game
 - ```skip-launcher-update``` skips self-update
+
+### Note for server owners:
+When the launcher updates itself it needs to be restarted. It will return exit code 101 in this case.
