@@ -156,6 +156,21 @@ fn windows_launcher_install(games: &Vec<Game>) {
     let installed_games = get_installed_games(games);
 
     if !installed_games.is_empty() {
+        // if current directory is in the steamapps/common folder of a game, use that game
+        let current_dir = std::env::current_dir().unwrap();
+        for (id, path) in installed_games.iter() {
+            if current_dir.starts_with(path) {
+                println!("Found game in current directory.");
+                println!("Installing AlterWare client for {}.", id);
+                let game = games.iter().find(|&g| g.app_id == *id).unwrap();
+                setup_client_links(game, path);
+                update(&game, path);
+                println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
+                std::io::stdin().read_line(&mut String::new()).unwrap();
+                std::process::exit(0);
+            }
+        }
+
         println!("Installed games:");
 
         for (id, path) in installed_games.iter() {
@@ -203,6 +218,9 @@ fn windows_launcher_install(games: &Vec<Game>) {
                     }
                 }
 
+                update(game, path);
+                println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
+                std::io::stdin().read_line(&mut String::new()).unwrap();
                 break;
             }
         }
@@ -214,7 +232,7 @@ fn windows_launcher_install(games: &Vec<Game>) {
     std::process::exit(0);
 }
 
-fn update(game: &Game) {
+fn update(game: &Game, dir: &PathBuf) {
     let cdn_info: Vec<CdnFile> = serde_json::from_str(&http::get_body_string(
         format!("{}/files.json", MASTER).as_str(),
     ))
@@ -225,7 +243,7 @@ fn update(game: &Game) {
             continue;
         }
 
-        let file_path = PathBuf::from(&file.name.replace(&format!("{}/", game.engine), ""));
+        let file_path = dir.join(&file.name.replace(&format!("{}/", game.engine), ""));
         if file_path.exists() {
             let sha1_local = get_file_sha1(&file_path).to_lowercase();
             let sha1_remote = file.hash.to_lowercase();
@@ -311,7 +329,7 @@ fn main() {
     for g in games.iter() {
         for c in g.client.iter() {
             if c == &game {
-                update(g);
+                update(g, &std::env::current_dir().unwrap());
                 if !update_only {
                     launch(&PathBuf::from(format!("{}.exe", c)));
                 }
