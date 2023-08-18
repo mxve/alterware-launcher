@@ -307,6 +307,11 @@ fn main() {
             for r in g.references.iter() {
                 if std::path::Path::new(r).exists() {
                     if g.client.len() > 1 {
+                        if update_only {
+                            game = String::from(g.client[0]);
+                            break 'main;
+                        }
+
                         #[cfg(windows)]
                         setup_client_links(g, &std::env::current_dir().unwrap());
 
