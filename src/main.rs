@@ -109,7 +109,7 @@ fn self_update(update_only: bool) {
         if !update_only {
             std::io::stdin().read_line(&mut String::new()).unwrap();
         }
-        std::process::exit(101);
+        std::process::exit(201);
     }
 }
 

@@ -11,4 +11,4 @@
 - ```skip-launcher-update``` skips self-update
 
 ### Note for server owners:
-When the launcher updates itself it needs to be restarted. It will return exit code 101 in this case.
+When the launcher updates itself it needs to be restarted. It will return exit code 201 in this case.
