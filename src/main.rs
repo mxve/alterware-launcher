@@ -2,7 +2,7 @@ mod http;
 #[cfg(windows)]
 use mslnk::ShellLink;
 use semver::Version;
-use std::{fs, path::PathBuf};
+use std::{fs, path::Path, path::PathBuf};
 #[cfg(not(windows))]
 use std::{thread, time};
 #[cfg(windows)]
@@ -134,7 +134,7 @@ fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
 }
 
 #[cfg(windows)]
-fn setup_client_links(game: &Game, game_dir: &PathBuf) {
+fn setup_client_links(game: &Game, game_dir: &Path) {
     if game.client.len() > 1 {
         println!("Multiple clients installed, use the shortcuts (launch-<client>.lnk in the game directory or desktop shortcuts) to launch a specific client.");
     }
@@ -170,7 +170,7 @@ fn windows_launcher_install(games: &Vec<Game>) {
                 println!("Installing AlterWare client for {}.", id);
                 let game = games.iter().find(|&g| g.app_id == *id).unwrap();
                 setup_client_links(game, path);
-                update(&game, path);
+                update(game, path);
                 println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
                 std::io::stdin().read_line(&mut String::new()).unwrap();
                 std::process::exit(0);
@@ -240,8 +240,10 @@ fn windows_launcher_install(games: &Vec<Game>) {
     }
 }
 
-fn prompt_client_selection(games: &Vec<Game>) -> String {
-    println!("Couldn't detect any games, please select a client to install in the current directory:");
+fn prompt_client_selection(games: &[Game]) -> String {
+    println!(
+        "Couldn't detect any games, please select a client to install in the current directory:"
+    );
     for (i, g) in games.iter().enumerate() {
         for c in g.client.iter() {
             println!("{}: {}", i, c);
@@ -251,7 +253,7 @@ fn prompt_client_selection(games: &Vec<Game>) -> String {
     String::from(games[input].client[0])
 }
 
-fn manual_install(games: &Vec<Game>) {
+fn manual_install(games: &[Game]) {
     let selection = prompt_client_selection(games);
     let game = games.iter().find(|&g| g.client[0] == selection).unwrap();
     update(game, &std::env::current_dir().unwrap());
@@ -260,7 +262,7 @@ fn manual_install(games: &Vec<Game>) {
     std::process::exit(0);
 }
 
-fn update(game: &Game, dir: &PathBuf) {
+fn update(game: &Game, dir: &Path) {
     let cdn_info: Vec<CdnFile> = serde_json::from_str(&http::get_body_string(
         format!("{}/files.json", MASTER).as_str(),
     ))
@@ -375,7 +377,7 @@ fn main() {
     windows_launcher_install(&games);
 
     #[cfg(not(windows))]
-    prompt_client_selection(&games);
+    manual_install(&games);
 
     println!("Game not found!");
     println!("Place the launcher in the game folder, if that doesn't work specify the client on the command line (ex. alterware-launcher.exe iw4-sp)");
