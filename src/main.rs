@@ -116,7 +116,13 @@ fn self_update(update_only: bool) {
 #[cfg(windows)]
 fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
     let mut installed_games = Vec::new();
-    let mut steamdir = SteamDir::locate().unwrap();
+    let mut steamdir = match SteamDir::locate() {
+        Some(steamdir) => steamdir,
+        None => {
+            println!("Steam not found.");
+            return installed_games;
+        }
+    };
 
     for game in games {
         if let Some(app) = steamdir.app(&game.app_id) {
@@ -177,8 +183,12 @@ fn windows_launcher_install(games: &Vec<Game>) {
             println!("{}: {}", id, path.display());
         }
 
-        println!("Enter the ID of the game you want to install the AlterWare client for:");
+        println!("Enter the ID of the game you want to install the AlterWare client for, enter 0 for manual selection:");
         let input: u32 = get_input().parse().unwrap();
+
+        if input == 0 {
+            return manual_install(games);
+        }
 
         for (id, path) in installed_games.iter() {
             if *id == input {
@@ -224,11 +234,29 @@ fn windows_launcher_install(games: &Vec<Game>) {
                 break;
             }
         }
-
         std::process::exit(0);
+    } else {
+        manual_install(games);
     }
+}
 
-    println!("No installed Steam games found. Please install a supported game first or place the launcher in the game folder.");
+fn prompt_client_selection(games: &Vec<Game>) -> String {
+    println!("Couldn't detect any games, please select a client to install in the current directory:");
+    for (i, g) in games.iter().enumerate() {
+        for c in g.client.iter() {
+            println!("{}: {}", i, c);
+        }
+    }
+    let input: usize = get_input().parse().unwrap();
+    String::from(games[input].client[0])
+}
+
+fn manual_install(games: &Vec<Game>) {
+    let selection = prompt_client_selection(games);
+    let game = games.iter().find(|&g| g.client[0] == selection).unwrap();
+    update(game, &std::env::current_dir().unwrap());
+    println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
+    std::io::stdin().read_line(&mut String::new()).unwrap();
     std::process::exit(0);
 }
 
@@ -345,6 +373,9 @@ fn main() {
 
     #[cfg(windows)]
     windows_launcher_install(&games);
+
+    #[cfg(not(windows))]
+    prompt_client_selection(&games);
 
     println!("Game not found!");
     println!("Place the launcher in the game folder, if that doesn't work specify the client on the command line (ex. alterware-launcher.exe iw4-sp)");
