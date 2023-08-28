@@ -521,9 +521,9 @@ dependencies = [
 
 [[package]]
 name = "self-replace"
-version = "1.3.5"
+version = "1.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0e7c919783db74b5995f13506069227e4721d388bea4a8ac3055acac864ac16"
+checksum = "c56335359191626938ef6fdeb478f9f6a7c6020254d7f4641c7d810369fa0ec1"
 dependencies = [
  "fastrand 1.9.0",
  "tempfile",
