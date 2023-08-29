@@ -1,117 +1,18 @@
+mod github;
+mod global;
 mod http;
+mod misc;
+mod self_update;
+mod structs;
+
+use global::*;
+use structs::*;
+
 #[cfg(windows)]
 use mslnk::ShellLink;
-use semver::Version;
 use std::{fs, path::Path, path::PathBuf};
-#[cfg(not(windows))]
-use std::{thread, time};
 #[cfg(windows)]
 use steamlocate::SteamDir;
-
-#[derive(serde::Deserialize, serde::Serialize)]
-struct CdnFile {
-    name: String,
-    size: u32,
-    hash: String,
-}
-
-#[derive(serde::Deserialize, serde::Serialize)]
-struct Game<'a> {
-    engine: &'a str,
-    client: Vec<&'a str>,
-    references: Vec<&'a str>,
-    app_id: u32,
-}
-
-const MASTER: &str = "https://master.alterware.dev";
-const REPO: &str = "mxve/alterware-launcher";
-
-fn get_file_sha1(path: &PathBuf) -> String {
-    let mut sha1 = sha1_smol::Sha1::new();
-    sha1.update(&fs::read(path).unwrap());
-    sha1.digest().to_string()
-}
-
-fn get_input() -> String {
-    let mut input = String::new();
-    std::io::stdin().read_line(&mut input).unwrap();
-    input.trim().to_string()
-}
-
-fn self_update_available() -> bool {
-    let current_version: Version = Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
-    let github_body = http::get_body_string(
-        format!("https://api.github.com/repos/{}/releases/latest", REPO).as_str(),
-    );
-    let github_json: serde_json::Value = serde_json::from_str(&github_body).unwrap();
-    let latest_version = github_json["tag_name"]
-        .to_string()
-        .replace(['v', '"'].as_ref(), "");
-    let latest_version = Version::parse(&latest_version).unwrap();
-
-    current_version < latest_version
-}
-
-#[cfg(not(windows))]
-fn self_update(_update_only: bool) {
-    if self_update_available() {
-        println!("A new version of the AlterWare launcher is available.");
-        println!("Download it at https://github.com/{}/releases/latest", REPO);
-        println!("Launching in 10 seconds..");
-        thread::sleep(time::Duration::from_secs(10));
-    }
-}
-
-#[cfg(windows)]
-fn self_update(update_only: bool) {
-    let working_dir = std::env::current_dir().unwrap();
-    let files = fs::read_dir(&working_dir).unwrap();
-
-    for file in files {
-        let file = file.unwrap();
-        let file_name = file.file_name().into_string().unwrap();
-
-        if file_name.contains("alterware-launcher")
-            && (file_name.contains(".__relocated__.exe")
-                || file_name.contains(".__selfdelete__.exe"))
-        {
-            fs::remove_file(file.path()).unwrap();
-        }
-    }
-
-    if self_update_available() {
-        println!("Performing launcher self-update.");
-        println!("If you run into any issues, please download the latest version at https://github.com/{}/releases/latest", REPO);
-
-        let update_binary = PathBuf::from("alterware-launcher-update.exe");
-        let file_path = working_dir.join(&update_binary);
-
-        if update_binary.exists() {
-            fs::remove_file(&update_binary).unwrap();
-        }
-
-        http::download_file(
-            &format!(
-                "https://github.com/{}/releases/latest/download/alterware-launcher.exe",
-                REPO
-            ),
-            &file_path,
-        );
-
-        if !file_path.exists() {
-            println!("Failed to download launcher update.");
-            return;
-        }
-
-        self_replace::self_replace("alterware-launcher-update.exe").unwrap();
-        fs::remove_file(&file_path).unwrap();
-        println!("Launcher updated. Please run it again.");
-        if !update_only {
-            std::io::stdin().read_line(&mut String::new()).unwrap();
-        }
-        std::process::exit(201);
-    }
-}
 
 #[cfg(windows)]
 fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
@@ -157,6 +58,41 @@ fn setup_client_links(game: &Game, game_dir: &Path) {
 }
 
 #[cfg(windows)]
+fn setup_desktop_links(path: &Path, game: &Game) {
+    println!("Create Desktop shortcut? (Y/n)");
+    let input = misc::stdin().to_ascii_lowercase();
+
+    if input == "y" || input.is_empty() {
+        let desktop = PathBuf::from(&format!(
+            "{}\\Desktop",
+            std::env::var("USERPROFILE").unwrap()
+        ));
+
+        let target = path.join("alterware-launcher.exe");
+
+        for c in game.client.iter() {
+            let lnk = desktop.join(format!("{}.lnk", c));
+
+            let mut sl = ShellLink::new(target.clone()).unwrap();
+            sl.set_arguments(Some(c.to_string()));
+            sl.set_icon_location(Some(
+                path.join(format!("{}.exe", c))
+                    .to_string_lossy()
+                    .into_owned(),
+            ));
+            sl.create_lnk(lnk).unwrap();
+        }
+    }
+}
+
+#[cfg(windows)]
+fn auto_install(path: &Path, game: &Game) {
+    setup_client_links(game, path);
+    setup_desktop_links(path, game);
+    update(game, path);
+}
+
+#[cfg(windows)]
 fn windows_launcher_install(games: &Vec<Game>) {
     println!("No game specified/found. Checking for installed Steam games..");
     let installed_games = get_installed_games(games);
@@ -169,8 +105,7 @@ fn windows_launcher_install(games: &Vec<Game>) {
                 println!("Found game in current directory.");
                 println!("Installing AlterWare client for {}.", id);
                 let game = games.iter().find(|&g| g.app_id == *id).unwrap();
-                setup_client_links(game, path);
-                update(game, path);
+                auto_install(path, game);
                 println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
                 std::io::stdin().read_line(&mut String::new()).unwrap();
                 std::process::exit(0);
@@ -184,7 +119,7 @@ fn windows_launcher_install(games: &Vec<Game>) {
         }
 
         println!("Enter the ID of the game you want to install the AlterWare client for, enter 0 for manual selection:");
-        let input: u32 = get_input().parse().unwrap();
+        let input: u32 = misc::stdin().parse().unwrap();
 
         if input == 0 {
             return manual_install(games);
@@ -201,34 +136,7 @@ fn windows_launcher_install(games: &Vec<Game>) {
                     fs::copy(launcher_path, target_path).unwrap();
                     println!("Launcher copied to {}", path.display());
                 }
-                setup_client_links(game, path);
-
-                println!("Create Desktop shortcut? (Y/n)");
-                let input = get_input().to_ascii_lowercase();
-
-                if input == "y" || input.is_empty() {
-                    let desktop = PathBuf::from(&format!(
-                        "{}\\Desktop",
-                        std::env::var("USERPROFILE").unwrap()
-                    ));
-
-                    let target = path.join("alterware-launcher.exe");
-
-                    for c in game.client.iter() {
-                        let lnk = desktop.join(format!("{}.lnk", c));
-
-                        let mut sl = ShellLink::new(target.clone()).unwrap();
-                        sl.set_arguments(Some(c.to_string()));
-                        sl.set_icon_location(Some(
-                            path.join(format!("{}.exe", c))
-                                .to_string_lossy()
-                                .into_owned(),
-                        ));
-                        sl.create_lnk(lnk).unwrap();
-                    }
-                }
-
-                update(game, path);
+                auto_install(path, game);
                 println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
                 std::io::stdin().read_line(&mut String::new()).unwrap();
                 break;
@@ -249,7 +157,7 @@ fn prompt_client_selection(games: &[Game]) -> String {
             println!("{}: {}", i, c);
         }
     }
-    let input: usize = get_input().parse().unwrap();
+    let input: usize = misc::stdin().parse().unwrap();
     String::from(games[input].client[0])
 }
 
@@ -275,7 +183,7 @@ fn update(game: &Game, dir: &Path) {
 
         let file_path = dir.join(&file.name.replace(&format!("{}/", game.engine), ""));
         if file_path.exists() {
-            let sha1_local = get_file_sha1(&file_path).to_lowercase();
+            let sha1_local = misc::get_file_sha1(&file_path).to_lowercase();
             let sha1_remote = file.hash.to_lowercase();
             if sha1_local != sha1_remote {
                 println!(
@@ -319,7 +227,7 @@ fn main() {
     }
 
     if !args.contains(&String::from("skip-launcher-update")) {
-        self_update(update_only);
+        self_update::run(update_only);
     } else {
         args.iter()
             .position(|r| r == "skip-launcher-update")
@@ -347,11 +255,11 @@ fn main() {
 
                         #[cfg(not(windows))]
                         println!("Multiple clients installed, set the client as the first argument to launch a specific client.");
-
+                        println!("Select a client to launch:");
                         for (i, c) in g.client.iter().enumerate() {
                             println!("{}: {}", i, c);
                         }
-                        game = String::from(g.client[get_input().parse::<usize>().unwrap()]);
+                        game = String::from(g.client[misc::stdin().parse::<usize>().unwrap()]);
                         break 'main;
                     }
                     game = String::from(g.client[0]);
