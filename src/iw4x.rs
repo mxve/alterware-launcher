@@ -18,6 +18,9 @@ pub fn remote_revision() -> u16 {
 }
 
 pub fn update_available(dir: &Path) -> bool {
+    if !dir.join("iw4x.dll").exists() {
+        return true;
+    }
     local_revision(dir) < remote_revision()
 }
 
