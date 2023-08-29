@@ -11,3 +11,7 @@ pub fn stdin() -> String {
     std::io::stdin().read_line(&mut input).unwrap();
     input.trim().to_string()
 }
+
+pub fn rev_to_int(rev: &str) -> u16 {
+    rev.strip_prefix('r').unwrap().parse::<u16>().unwrap_or(0)
+}

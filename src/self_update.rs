@@ -1,4 +1,5 @@
 use crate::github;
+use crate::global::*;
 
 use semver::Version;
 #[cfg(not(windows))]
@@ -6,7 +7,7 @@ use std::{thread, time};
 
 pub fn self_update_available() -> bool {
     let current_version: Version = Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
-    let latest_version = github::latest_version();
+    let latest_version = github::latest_version(GH_OWNER, GH_REPO);
 
     current_version < latest_version
 }
@@ -46,7 +47,7 @@ pub fn run(update_only: bool) {
         println!("Performing launcher self-update.");
         println!(
             "If you run into any issues, please download the latest version at {}",
-            github::latest_release_url()
+            github::latest_release_url(GH_OWNER, GH_REPO)
         );
 
         let update_binary = PathBuf::from("alterware-launcher-update.exe");
@@ -59,7 +60,7 @@ pub fn run(update_only: bool) {
         http::download_file(
             &format!(
                 "{}/download/alterware-launcher.exe",
-                github::latest_release_url()
+                github::latest_release_url(GH_OWNER, GH_REPO)
             ),
             &file_path,
         );

@@ -1,25 +1,23 @@
-use crate::global::*;
-
 use semver::Version;
 
-pub fn latest_version() -> Version {
+pub fn latest(owner: &str, repo: &str) -> String {
     let github_body = crate::http::get_body_string(
         format!(
             "https://api.github.com/repos/{}/{}/releases/latest",
-            GH_OWNER, GH_REPO
+            owner, repo
         )
         .as_str(),
     );
     let github_json: serde_json::Value = serde_json::from_str(&github_body).unwrap();
-    let latest_version = github_json["tag_name"]
+    github_json["tag_name"]
         .to_string()
-        .replace(['v', '"'].as_ref(), "");
-    Version::parse(&latest_version).unwrap()
+        .replace(['v', '"'].as_ref(), "")
 }
 
-pub fn latest_release_url() -> String {
-    format!(
-        "https://github.com/{}/{}/releases/latest",
-        GH_OWNER, GH_REPO
-    )
+pub fn latest_version(owner: &str, repo: &str) -> Version {
+    Version::parse(&latest(owner, repo)).unwrap()
+}
+
+pub fn latest_release_url(owner: &str, repo: &str) -> String {
+    format!("https://github.com/{}/{}/releases/latest", owner, repo)
 }

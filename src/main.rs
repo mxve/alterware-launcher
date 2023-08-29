@@ -1,6 +1,7 @@
 mod github;
 mod global;
 mod http;
+mod iw4x;
 mod misc;
 mod self_update;
 mod structs;
@@ -177,7 +178,7 @@ fn update(game: &Game, dir: &Path) {
     .unwrap();
 
     for file in cdn_info {
-        if !file.name.starts_with(game.engine) {
+        if !file.name.starts_with(game.engine) || file.name == "iw4/iw4x.dll" {
             continue;
         }
 
@@ -203,6 +204,10 @@ fn update(game: &Game, dir: &Path) {
             }
             http::download_file(&format!("{}/{}", MASTER, file.name), &file_path);
         }
+    }
+
+    if game.engine == "iw4" {
+        iw4x::update(dir);
     }
 }
 
