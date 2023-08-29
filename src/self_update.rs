@@ -16,7 +16,7 @@ pub fn self_update_available() -> bool {
 pub fn run(_update_only: bool) {
     if self_update_available() {
         println!("A new version of the AlterWare launcher is available.");
-        println!("Download it at {}", github::latest_release_url());
+        println!("Download it at {}", github::latest_release_url(GH_OWNER, GH_REPO));
         println!("Launching in 10 seconds..");
         thread::sleep(time::Duration::from_secs(10));
     }
