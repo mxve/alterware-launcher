@@ -9,13 +9,12 @@ pub fn latest_tag(owner: &str, repo: &str) -> String {
         .as_str(),
     );
     let github_json: serde_json::Value = serde_json::from_str(&github_body).unwrap();
-    github_json["tag_name"]
-        .to_string()
-        .replace(['v', '"'].as_ref(), "")
+    github_json["tag_name"].to_string().replace('"', "")
 }
 
 pub fn latest_version(owner: &str, repo: &str) -> Version {
-    Version::parse(&latest_tag(owner, repo)).unwrap()
+    let tag = latest_tag(owner, repo).replace('v', "");
+    Version::parse(&tag).unwrap()
 }
 
 pub fn latest_release_url(owner: &str, repo: &str) -> String {

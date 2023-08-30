@@ -1,7 +1,7 @@
 use crate::github;
+use crate::global::*;
 use crate::http;
 use crate::misc;
-use crate::global::*;
 
 use std::{fs, path::Path};
 
@@ -17,27 +17,21 @@ pub fn remote_revision() -> u16 {
     misc::rev_to_int(&github::latest_tag(GH_IW4X_OWNER, GH_IW4X_REPO))
 }
 
-pub fn update_available(dir: &Path) -> bool {
-    if !dir.join("iw4x.dll").exists() {
-        return true;
-    }
-    local_revision(dir) < remote_revision()
-}
-
 pub fn update(dir: &Path) {
-    if update_available(dir) {
-        println!("Updating IW4x...");
-        http::download_file(
-            &format!(
-                "{}/download/iw4x.dll",
-                github::latest_release_url(GH_IW4X_OWNER, GH_IW4X_REPO)
-            ),
-            &dir.join("iw4x.dll"),
-        );
-        fs::write(
-            dir.join(".iw4xrevision"),
-            github::latest_tag(GH_IW4X_OWNER, GH_IW4X_REPO),
-        )
-        .unwrap();
+    let remote = remote_revision();
+    let local = local_revision(dir);
+
+    if remote <= local && dir.join("iw4x.dll").exists() {
+        return;
     }
+
+    println!("Updating IW4x...");
+    http::download_file(
+        &format!(
+            "{}/download/iw4x.dll",
+            github::latest_release_url(GH_IW4X_OWNER, GH_IW4X_REPO)
+        ),
+        &dir.join("iw4x.dll"),
+    );
+    fs::write(dir.join(".iw4xrevision"), format!("r{}", remote)).unwrap();
 }

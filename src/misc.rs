@@ -13,5 +13,8 @@ pub fn stdin() -> String {
 }
 
 pub fn rev_to_int(rev: &str) -> u16 {
-    rev.strip_prefix('r').unwrap().parse::<u16>().unwrap_or(0)
+    rev.strip_prefix('r')
+        .unwrap_or("0")
+        .parse::<u16>()
+        .unwrap_or(0)
 }
