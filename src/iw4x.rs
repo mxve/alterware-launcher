@@ -14,7 +14,7 @@ pub fn local_revision(dir: &Path) -> u16 {
 }
 
 pub fn remote_revision() -> u16 {
-    misc::rev_to_int(&github::latest(GH_IW4X_OWNER, GH_IW4X_REPO))
+    misc::rev_to_int(&github::latest_tag(GH_IW4X_OWNER, GH_IW4X_REPO))
 }
 
 pub fn update_available(dir: &Path) -> bool {
@@ -36,7 +36,7 @@ pub fn update(dir: &Path) {
         );
         fs::write(
             dir.join(".iw4xrevision"),
-            github::latest(GH_IW4X_OWNER, GH_IW4X_REPO),
+            github::latest_tag(GH_IW4X_OWNER, GH_IW4X_REPO),
         )
         .unwrap();
     }
