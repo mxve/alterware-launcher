@@ -192,6 +192,8 @@ fn update_dir(cdn_info: &Vec<CdnFile>, remote_dir: &str, dir: &Path) {
                     sha1_remote
                 );
                 http::download_file(&format!("{}/{}", MASTER, file.name), &file_path);
+            } else {
+                println!("{} is up to date.", file_path.display());
             }
         } else {
             println!("Downloading {}...", file_path.display());
