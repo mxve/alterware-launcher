@@ -177,8 +177,9 @@ fn update(game: &Game, dir: &Path) {
     ))
     .unwrap();
 
+    let engine_str = format!("{}/", game.engine);
     for file in cdn_info {
-        if !file.name.starts_with(game.engine) || file.name == "iw4/iw4x.dll" {
+        if !file.name.starts_with(&engine_str) || file.name == "iw4/iw4x.dll" {
             continue;
         }
 
