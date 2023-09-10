@@ -1,3 +1,4 @@
+mod config;
 mod github;
 mod global;
 mod http;
@@ -223,20 +224,27 @@ fn launch(file_path: &PathBuf) {
 
 fn main() {
     let mut args: Vec<String> = std::env::args().collect();
+    let mut cfg = config::load(PathBuf::from("alterware-launcher.json"));
 
-    let mut update_only = false;
     if args.contains(&String::from("update")) {
-        update_only = true;
+        cfg.update_only = true;
         args.iter()
             .position(|r| r == "update")
             .map(|e| args.remove(e));
     }
 
-    if !args.contains(&String::from("skip-launcher-update")) {
-        self_update::run(update_only);
+    if !args.contains(&String::from("skip-launcher-update")) && !cfg.skip_self_update {
+        self_update::run(cfg.update_only);
     } else {
         args.iter()
             .position(|r| r == "skip-launcher-update")
+            .map(|e| args.remove(e));
+    }
+
+    if args.contains(&String::from("bonus")) {
+        cfg.bonus_content = true;
+        args.iter()
+            .position(|r| r == "bonus")
             .map(|e| args.remove(e));
     }
 
@@ -251,7 +259,7 @@ fn main() {
             for r in g.references.iter() {
                 if std::path::Path::new(r).exists() {
                     if g.client.len() > 1 {
-                        if update_only {
+                        if cfg.update_only {
                             game = String::from(g.client[0]);
                             break 'main;
                         }
@@ -279,7 +287,7 @@ fn main() {
         for c in g.client.iter() {
             if c == &game {
                 update(g, &std::env::current_dir().unwrap());
-                if !update_only {
+                if !cfg.update_only {
                     launch(&PathBuf::from(format!("{}.exe", c)));
                 }
                 return;

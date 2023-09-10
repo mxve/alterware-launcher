@@ -13,9 +13,19 @@ pub struct Game<'a> {
     pub app_id: u32,
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(Default, serde::Deserialize, serde::Serialize)]
 pub struct Config {
     pub update_only: bool,
     pub skip_self_update: bool,
     pub bonus_content: bool,
 }
+
+// impl Default for Config {
+//     fn default() -> Self {
+//         Self {
+//             update_only: false,
+//             skip_self_update: false,
+//             bonus_content: false,
+//         }
+//     }
+// }
