@@ -91,7 +91,7 @@ fn setup_desktop_links(path: &Path, game: &Game) {
 fn auto_install(path: &Path, game: &Game) {
     setup_client_links(game, path);
     setup_desktop_links(path, game);
-    update(game, path);
+    update(game, path, false);
 }
 
 #[cfg(windows)]
@@ -166,25 +166,21 @@ fn prompt_client_selection(games: &[Game]) -> String {
 fn manual_install(games: &[Game]) {
     let selection = prompt_client_selection(games);
     let game = games.iter().find(|&g| g.client[0] == selection).unwrap();
-    update(game, &std::env::current_dir().unwrap());
+    update(game, &std::env::current_dir().unwrap(), false);
     println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
     std::io::stdin().read_line(&mut String::new()).unwrap();
     std::process::exit(0);
 }
 
-fn update(game: &Game, dir: &Path) {
-    let cdn_info: Vec<CdnFile> = serde_json::from_str(&http::get_body_string(
-        format!("{}/files.json", MASTER).as_str(),
-    ))
-    .unwrap();
+fn update_dir(cdn_info: &Vec<CdnFile>, remote_dir: &str, dir: &Path) {
+    let remote_dir = format!("{}/", remote_dir);
 
-    let engine_str = format!("{}/", game.engine);
     for file in cdn_info {
-        if !file.name.starts_with(&engine_str) || file.name == "iw4/iw4x.dll" {
+        if !file.name.starts_with(&remote_dir) || file.name == "iw4/iw4x.dll" {
             continue;
         }
 
-        let file_path = dir.join(&file.name.replace(&format!("{}/", game.engine), ""));
+        let file_path = dir.join(&file.name.replace(remote_dir.as_str(), ""));
         if file_path.exists() {
             let sha1_local = misc::get_file_sha1(&file_path).to_lowercase();
             let sha1_remote = file.hash.to_lowercase();
@@ -207,9 +203,24 @@ fn update(game: &Game, dir: &Path) {
             http::download_file(&format!("{}/{}", MASTER, file.name), &file_path);
         }
     }
+}
+
+fn update(game: &Game, dir: &Path, bonus_content: bool) {
+    let cdn_info: Vec<CdnFile> = serde_json::from_str(&http::get_body_string(
+        format!("{}/files.json", MASTER).as_str(),
+    ))
+    .unwrap();
+
+    update_dir(&cdn_info, game.engine, dir);
 
     if game.engine == "iw4" {
         iw4x::update(dir);
+    }
+
+    if bonus_content && !game.bonus.is_empty() {
+        for bonus in game.bonus.iter() {
+            update_dir(&cdn_info, bonus, dir);
+        }
     }
 }
 
@@ -242,7 +253,7 @@ fn main() {
     }
 
     if args.contains(&String::from("bonus")) {
-        cfg.bonus_content = true;
+        cfg.download_bonus_content = true;
         args.iter()
             .position(|r| r == "bonus")
             .map(|e| args.remove(e));
@@ -286,7 +297,27 @@ fn main() {
     for g in games.iter() {
         for c in g.client.iter() {
             if c == &game {
-                update(g, &std::env::current_dir().unwrap());
+                if cfg.ask_bonus_content && !g.bonus.is_empty() {
+                    println!("Download bonus content? (Y/n)");
+                    let input = misc::stdin().to_ascii_lowercase();
+                    cfg.download_bonus_content = input != "n";
+                    config::save_value(
+                        PathBuf::from("alterware-launcher.json"),
+                        "download_bonus_content",
+                        cfg.download_bonus_content,
+                    );
+                    config::save_value(
+                        PathBuf::from("alterware-launcher.json"),
+                        "ask_bonus_content",
+                        false,
+                    );
+                }
+
+                update(
+                    g,
+                    &std::env::current_dir().unwrap(),
+                    cfg.download_bonus_content,
+                );
                 if !cfg.update_only {
                     launch(&PathBuf::from(format!("{}.exe", c)));
                 }

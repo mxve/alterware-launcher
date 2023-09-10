@@ -11,21 +11,24 @@ pub struct Game<'a> {
     pub client: Vec<&'a str>,
     pub references: Vec<&'a str>,
     pub app_id: u32,
+    pub bonus: Vec<&'a str>,
 }
 
-#[derive(Default, serde::Deserialize, serde::Serialize)]
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct Config {
     pub update_only: bool,
     pub skip_self_update: bool,
-    pub bonus_content: bool,
+    pub download_bonus_content: bool,
+    pub ask_bonus_content: bool,
 }
 
-// impl Default for Config {
-//     fn default() -> Self {
-//         Self {
-//             update_only: false,
-//             skip_self_update: false,
-//             bonus_content: false,
-//         }
-//     }
-// }
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            update_only: false,
+            skip_self_update: false,
+            download_bonus_content: false,
+            ask_bonus_content: true,
+        }
+    }
+}
