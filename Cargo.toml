@@ -20,7 +20,7 @@ http_req = { version = "0.9.2", default-features = false, features = [
 ] }
 sha1_smol = "1.0.0"
 serde = { version = "1.0.188", features = ["derive"] }
-serde_json = "1.0.105"
+serde_json = "1.0.106"
 rand = "0.8.5"
 semver = "1.0.18"
 zip = "0.6.6"
