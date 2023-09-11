@@ -15,6 +15,7 @@ use mslnk::ShellLink;
 use std::{fs, path::Path, path::PathBuf};
 #[cfg(windows)]
 use steamlocate::SteamDir;
+use colored::*;
 
 #[cfg(windows)]
 fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
@@ -22,7 +23,7 @@ fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
     let mut steamdir = match SteamDir::locate() {
         Some(steamdir) => steamdir,
         None => {
-            println!("Steam not found.");
+            println!("{}", "Steam not found!".yellow());
             return installed_games;
         }
     };
@@ -39,7 +40,7 @@ fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
 #[cfg(windows)]
 fn setup_client_links(game: &Game, game_dir: &Path) {
     if game.client.len() > 1 {
-        println!("Multiple clients installed, use the shortcuts (launch-<client>.lnk in the game directory or desktop shortcuts) to launch a specific client.");
+        println!("Multiple clients installed, use the shortcuts (launch-<client>.lnk in the game directory or on the desktop) to launch a specific client.");
     }
 
     let target = game_dir.join("alterware-launcher.exe");
@@ -96,7 +97,7 @@ fn auto_install(path: &Path, game: &Game) {
 
 #[cfg(windows)]
 fn windows_launcher_install(games: &Vec<Game>) {
-    println!("No game specified/found. Checking for installed Steam games..");
+    println!("{}", "No game specified/found. Checking for installed Steam games..".yellow());
     let installed_games = get_installed_games(games);
 
     if !installed_games.is_empty() {
@@ -186,17 +187,16 @@ fn update_dir(cdn_info: &Vec<CdnFile>, remote_dir: &str, dir: &Path) {
             let sha1_remote = file.hash.to_lowercase();
             if sha1_local != sha1_remote {
                 println!(
-                    "Updating {}...\nLocal hash: {}\nRemote hash: {}",
-                    file_path.display(),
-                    sha1_local,
-                    sha1_remote
+                    "[{}]    {}",
+                    "Updating".bright_yellow(),
+                    file_path.display()
                 );
                 http::download_file(&format!("{}/{}", MASTER, file.name), &file_path);
             } else {
-                println!("{} is up to date.", file_path.display());
+                println!("[{}]     {}", "Checked".bright_blue(), file_path.display());
             }
         } else {
-            println!("Downloading {}...", file_path.display());
+            println!("[{}] {}", "Downloading".bright_yellow(), file_path.display());
             if let Some(parent) = file_path.parent() {
                 if !parent.exists() {
                     fs::create_dir_all(parent).unwrap();
@@ -235,7 +235,18 @@ fn launch(file_path: &PathBuf) {
         .expect("Failed to wait for the game process to finish");
 }
 
+#[cfg(windows)]
+fn setup_env() {
+    colored::control::set_virtual_terminal(true).unwrap_or_else(|error| {
+        println!("{:#?}", error);
+        colored::control::SHOULD_COLORIZE.set_override(false);
+    });
+}
+
 fn main() {
+    #[cfg(windows)]
+    setup_env();
+
     let mut args: Vec<String> = std::env::args().collect();
     let mut cfg = config::load(PathBuf::from("alterware-launcher.json"));
 
@@ -334,7 +345,7 @@ fn main() {
     #[cfg(not(windows))]
     manual_install(&games);
 
-    println!("Game not found!");
+    println!("{}", "Game not found!".bright_red());
     println!("Place the launcher in the game folder, if that doesn't work specify the client on the command line (ex. alterware-launcher.exe iw4-sp)");
     println!("Press enter to exit...");
     std::io::stdin().read_line(&mut String::new()).unwrap();
