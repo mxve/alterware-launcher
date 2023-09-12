@@ -3,8 +3,8 @@ use crate::global::*;
 use crate::http;
 use crate::misc;
 
-use std::{fs, path::Path};
 use colored::*;
+use std::{fs, path::Path};
 
 pub fn local_revision(dir: &Path) -> u16 {
     if let Ok(revision) = fs::read_to_string(dir.join(".iw4xrevision")) {
@@ -26,7 +26,11 @@ pub fn update(dir: &Path) {
         return;
     }
 
-    println!("[{}] {}", "Downloading".bright_yellow(), dir.join("iw4x.dll").display());
+    println!(
+        "[{}] {}",
+        "Downloading".bright_yellow(),
+        dir.join("iw4x.dll").display()
+    );
     http::download_file(
         &format!(
             "{}/download/iw4x.dll",

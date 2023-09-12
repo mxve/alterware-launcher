@@ -20,6 +20,7 @@ pub struct Config {
     pub skip_self_update: bool,
     pub download_bonus_content: bool,
     pub ask_bonus_content: bool,
+    pub force_update: bool,
 }
 
 impl Default for Config {
@@ -29,6 +30,7 @@ impl Default for Config {
             skip_self_update: false,
             download_bonus_content: false,
             ask_bonus_content: true,
+            force_update: false,
         }
     }
 }

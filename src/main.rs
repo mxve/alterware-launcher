@@ -10,12 +10,12 @@ mod structs;
 use global::*;
 use structs::*;
 
+use colored::*;
 #[cfg(windows)]
 use mslnk::ShellLink;
-use std::{fs, path::Path, path::PathBuf};
+use std::{borrow::Cow, collections::HashMap, fs, path::Path, path::PathBuf};
 #[cfg(windows)]
 use steamlocate::SteamDir;
-use colored::*;
 
 #[cfg(windows)]
 fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
@@ -92,12 +92,15 @@ fn setup_desktop_links(path: &Path, game: &Game) {
 fn auto_install(path: &Path, game: &Game) {
     setup_client_links(game, path);
     setup_desktop_links(path, game);
-    update(game, path, false);
+    update(game, path, false, false);
 }
 
 #[cfg(windows)]
 fn windows_launcher_install(games: &Vec<Game>) {
-    println!("{}", "No game specified/found. Checking for installed Steam games..".yellow());
+    println!(
+        "{}",
+        "No game specified/found. Checking for installed Steam games..".yellow()
+    );
     let installed_games = get_installed_games(games);
 
     if !installed_games.is_empty() {
@@ -167,13 +170,18 @@ fn prompt_client_selection(games: &[Game]) -> String {
 fn manual_install(games: &[Game]) {
     let selection = prompt_client_selection(games);
     let game = games.iter().find(|&g| g.client[0] == selection).unwrap();
-    update(game, &std::env::current_dir().unwrap(), false);
+    update(game, &std::env::current_dir().unwrap(), false, false);
     println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
     std::io::stdin().read_line(&mut String::new()).unwrap();
     std::process::exit(0);
 }
 
-fn update_dir(cdn_info: &Vec<CdnFile>, remote_dir: &str, dir: &Path) {
+fn update_dir(
+    cdn_info: &Vec<CdnFile>,
+    remote_dir: &str,
+    dir: &Path,
+    hashes: &mut HashMap<String, String>,
+) {
     let remote_dir = format!("{}/", remote_dir);
 
     for file in cdn_info {
@@ -181,10 +189,16 @@ fn update_dir(cdn_info: &Vec<CdnFile>, remote_dir: &str, dir: &Path) {
             continue;
         }
 
-        let file_path = dir.join(&file.name.replace(remote_dir.as_str(), ""));
+        let sha1_remote = file.hash.to_lowercase();
+        let file_name = &file.name.replace(remote_dir.as_str(), "");
+        let file_path = dir.join(file_name);
         if file_path.exists() {
-            let sha1_local = misc::get_file_sha1(&file_path).to_lowercase();
-            let sha1_remote = file.hash.to_lowercase();
+            let sha1_local = hashes
+                .get(file_name)
+                .map(Cow::Borrowed)
+                .unwrap_or_else(|| Cow::Owned(misc::get_file_sha1(&file_path)))
+                .to_string();
+
             if sha1_local != sha1_remote {
                 println!(
                     "[{}]    {}",
@@ -195,25 +209,43 @@ fn update_dir(cdn_info: &Vec<CdnFile>, remote_dir: &str, dir: &Path) {
             } else {
                 println!("[{}]     {}", "Checked".bright_blue(), file_path.display());
             }
+            hashes.insert(file_name.to_owned(), sha1_remote.to_owned());
         } else {
-            println!("[{}] {}", "Downloading".bright_yellow(), file_path.display());
+            println!(
+                "[{}] {}",
+                "Downloading".bright_yellow(),
+                file_path.display()
+            );
             if let Some(parent) = file_path.parent() {
                 if !parent.exists() {
                     fs::create_dir_all(parent).unwrap();
                 }
             }
             http::download_file(&format!("{}/{}", MASTER, file.name), &file_path);
+            hashes.insert(file_name.to_owned(), sha1_remote.to_owned());
         }
     }
 }
 
-fn update(game: &Game, dir: &Path, bonus_content: bool) {
+fn update(game: &Game, dir: &Path, bonus_content: bool, force: bool) {
     let cdn_info: Vec<CdnFile> = serde_json::from_str(&http::get_body_string(
         format!("{}/files.json", MASTER).as_str(),
     ))
     .unwrap();
 
-    update_dir(&cdn_info, game.engine, dir);
+    let mut hashes = HashMap::new();
+    let hash_file = dir.join(".sha-sums");
+    if hash_file.exists() && !force {
+        let hash_file = fs::read_to_string(hash_file).unwrap();
+        for line in hash_file.lines() {
+            let mut split = line.split_whitespace();
+            let hash = split.next().unwrap();
+            let file = split.next().unwrap();
+            hashes.insert(file.to_owned(), hash.to_owned());
+        }
+    }
+
+    update_dir(&cdn_info, game.engine, dir, &mut hashes);
 
     if game.engine == "iw4" {
         iw4x::update(dir);
@@ -221,9 +253,15 @@ fn update(game: &Game, dir: &Path, bonus_content: bool) {
 
     if bonus_content && !game.bonus.is_empty() {
         for bonus in game.bonus.iter() {
-            update_dir(&cdn_info, bonus, dir);
+            update_dir(&cdn_info, bonus, dir, &mut hashes);
         }
     }
+
+    let mut hash_file_content = String::new();
+    for (file, hash) in hashes.iter() {
+        hash_file_content.push_str(&format!("{} {}\n", hash, file));
+    }
+    fs::write(dir.join(".sha-sums"), hash_file_content).unwrap();
 }
 
 fn launch(file_path: &PathBuf) {
@@ -269,6 +307,13 @@ fn main() {
         cfg.download_bonus_content = true;
         args.iter()
             .position(|r| r == "bonus")
+            .map(|e| args.remove(e));
+    }
+
+    if args.contains(&String::from("force")) {
+        cfg.force_update = true;
+        args.iter()
+            .position(|r| r == "force")
             .map(|e| args.remove(e));
     }
 
@@ -330,6 +375,7 @@ fn main() {
                     g,
                     &std::env::current_dir().unwrap(),
                     cfg.download_bonus_content,
+                    cfg.force_update,
                 );
                 if !cfg.update_only {
                     launch(&PathBuf::from(format!("{}.exe", c)));
