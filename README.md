@@ -20,6 +20,7 @@
 - Passing ```update``` will stop the launcher from launching the game
 - ```skip-launcher-update``` skips launcher self-update
 - ```bonus``` download bonus content
+- ```force``` forces file hash recheck
 
 Some arguments can be set in alterware-launcher.json, args generally override the values of the config.
 
