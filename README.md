@@ -29,7 +29,7 @@
 - ```--path```, ```-p```
   - Set the game path
     - Do not include a trailing backslash in the path
--- ```--pass```
+- ```--pass```
   - Pass additional arguments to the game
 
 Example: ```alterware-launcher.exe iw4x --bonus -u --path "C:\Games\IW4x" --pass "-console"```
