@@ -359,7 +359,6 @@ fn main() {
     } else {
         'main: for g in games.iter() {
             for r in g.references.iter() {
-                println!("{:?}", install_path.join(r));
                 if install_path.join(r).exists() {
                     if g.client.len() > 1 {
                         if cfg.update_only {
