@@ -21,6 +21,7 @@ pub struct Config {
     pub download_bonus_content: bool,
     pub ask_bonus_content: bool,
     pub force_update: bool,
+    pub args: String,
 }
 
 impl Default for Config {
@@ -31,6 +32,7 @@ impl Default for Config {
             download_bonus_content: false,
             ask_bonus_content: true,
             force_update: false,
+            args: String::from(""),
         }
     }
 }

@@ -23,6 +23,7 @@ pub fn save_value(config_path: PathBuf, key: &str, value: bool) {
         "skip_self_update" => config.skip_self_update = value,
         "download_bonus_content" => config.download_bonus_content = value,
         "ask_bonus_content" => config.ask_bonus_content = value,
+        "force_update" => config.force_update = value,
         _ => (),
     }
     save(config_path, config);

@@ -344,12 +344,13 @@ fn main() {
         arg_remove(&mut args, "-f");
     }
 
-    let client_args: String;
     if let Some(pass) = arg_value(&args, "--pass") {
-        client_args = pass;
+        cfg.args = pass;
         arg_remove_value(&mut args, "--pass");
     } else {
-        client_args = String::new();
+        if cfg.args.is_empty() {
+            cfg.args = String::from("");
+        }
     }
 
     let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());
@@ -413,7 +414,7 @@ fn main() {
                     cfg.force_update,
                 );
                 if !cfg.update_only {
-                    launch(&install_path.join(format!("{}.exe", c)), &client_args);
+                    launch(&install_path.join(format!("{}.exe", c)), &cfg.args);
                 }
                 return;
             }
