@@ -29,8 +29,10 @@
 - ```--path```, ```-p```
   - Set the game path
     - Do not include a trailing backslash in the path
+-- ```--pass```
+  - Pass additional arguments to the game
 
-Example: ```alterware-launcher.exe iw4x --bonus -u --path "C:\Games\IW4x"```
+Example: ```alterware-launcher.exe iw4x --bonus -u --path "C:\Games\IW4x" --pass "-console"```
 
 Some arguments can be set in alterware-launcher.json, args generally override the values of the config.
 

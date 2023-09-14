@@ -263,9 +263,10 @@ fn update(game: &Game, dir: &Path, bonus_content: bool, force: bool) {
     fs::write(dir.join(".sha-sums"), hash_file_content).unwrap();
 }
 
-fn launch(file_path: &PathBuf) {
+fn launch(file_path: &PathBuf, args: &str) {
     println!("Launching {}...", file_path.display());
     std::process::Command::new(file_path)
+        .args(args.split(' '))
         .spawn()
         .expect("Failed to launch the game")
         .wait()
@@ -281,16 +282,9 @@ fn setup_env() {
 }
 
 fn arg_value(args: &[String], arg: &str) -> Option<String> {
-    let val = args
-        .iter()
+    args.iter()
         .position(|r| r == arg)
-        .map(|e| args[e + 1].clone());
-    if let Some(ref val) = val {
-        if val.starts_with('-') {
-            return None;
-        }
-    }
-    val
+        .map(|e| args[e + 1].clone())
 }
 
 fn arg_bool(args: &[String], arg: &str) -> bool {
@@ -302,10 +296,10 @@ fn arg_remove(args: &mut Vec<String>, arg: &str) {
 }
 
 fn arg_remove_value(args: &mut Vec<String>, arg: &str) {
-    args.iter().position(|r| r == arg).map(|e| {
+    if let Some(e) = args.iter().position(|r| r == arg) {
         args.remove(e);
         args.remove(e);
-    });
+    };
 }
 
 fn main() {
@@ -348,6 +342,14 @@ fn main() {
         cfg.force_update = true;
         arg_remove(&mut args, "--force");
         arg_remove(&mut args, "-f");
+    }
+
+    let client_args: String;
+    if let Some(pass) = arg_value(&args, "--pass") {
+        client_args = pass;
+        arg_remove_value(&mut args, "--pass");
+    } else {
+        client_args = String::new();
     }
 
     let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());
@@ -411,7 +413,7 @@ fn main() {
                     cfg.force_update,
                 );
                 if !cfg.update_only {
-                    launch(&install_path.join(format!("{}.exe", c)));
+                    launch(&install_path.join(format!("{}.exe", c)), &client_args);
                 }
                 return;
             }
