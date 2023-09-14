@@ -301,12 +301,31 @@ fn arg_remove(args: &mut Vec<String>, arg: &str) {
     args.iter().position(|r| r == arg).map(|e| args.remove(e));
 }
 
+fn arg_remove_value(args: &mut Vec<String>, arg: &str) {
+    args.iter().position(|r| r == arg).map(|e| {
+        args.remove(e);
+        args.remove(e);
+    });
+}
+
 fn main() {
     #[cfg(windows)]
     setup_env();
 
     let mut args: Vec<String> = std::env::args().collect();
-    let mut cfg = config::load(PathBuf::from("alterware-launcher.json"));
+
+    let install_path: PathBuf;
+    if let Some(path) = arg_value(&args, "--path") {
+        install_path = PathBuf::from(path);
+        arg_remove_value(&mut args, "--path");
+    } else if let Some(path) = arg_value(&args, "-p") {
+        install_path = PathBuf::from(path);
+        arg_remove_value(&mut args, "-p");
+    } else {
+        install_path = std::env::current_dir().unwrap();
+    }
+
+    let mut cfg = config::load(install_path.join("alterware-launcher.json"));
 
     if !arg_bool(&args, "--skip-launcher-update") && !cfg.skip_self_update {
         self_update::run(cfg.update_only);
@@ -331,17 +350,6 @@ fn main() {
         arg_remove(&mut args, "-f");
     }
 
-    let install_path: PathBuf;
-    if let Some(path) = arg_value(&args, "--path") {
-        install_path = PathBuf::from(path);
-        arg_remove(&mut args, "--path");
-    } else if let Some(path) = arg_value(&args, "-p") {
-        install_path = PathBuf::from(path);
-        arg_remove(&mut args, "-p");
-    } else {
-        install_path = std::env::current_dir().unwrap();
-    }
-
     let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());
     let games: Vec<Game> = serde_json::from_str(&games_json).unwrap();
 
@@ -351,7 +359,8 @@ fn main() {
     } else {
         'main: for g in games.iter() {
             for r in g.references.iter() {
-                if std::path::Path::new(r).exists() {
+                println!("{:?}", install_path.join(r));
+                if install_path.join(r).exists() {
                     if g.client.len() > 1 {
                         if cfg.update_only {
                             game = String::from(g.client[0]);

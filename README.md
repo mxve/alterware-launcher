@@ -28,8 +28,9 @@
   - Force file hash recheck
 - ```--path```, ```-p```
   - Set the game path
+    - Do not include a trailing backslash in the path
 
-Example: ```alterware-launcher.exe iw4x --bonus -u```
+Example: ```alterware-launcher.exe iw4x --bonus -u --path "C:\Games\IW4x"```
 
 Some arguments can be set in alterware-launcher.json, args generally override the values of the config.
 
