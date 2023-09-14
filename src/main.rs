@@ -281,6 +281,26 @@ fn setup_env() {
     });
 }
 
+fn arg_value(args: &[String], arg: &str) -> Option<String> {
+    let val = args.iter()
+        .position(|r| r == arg)
+        .map(|e| args[e + 1].clone());
+    if let Some(ref val) = val {
+        if val.starts_with('-') {
+            return None;
+        }
+    }
+    val
+}
+
+fn arg_bool(args: &[String], arg: &str) -> bool {
+    args.iter().any(|r| r == arg)
+}
+
+fn arg_remove(args: &mut Vec<String>, arg: &str) {
+    args.iter().position(|r| r == arg).map(|e| args.remove(e));
+}
+
 fn main() {
     #[cfg(windows)]
     setup_env();
@@ -288,33 +308,27 @@ fn main() {
     let mut args: Vec<String> = std::env::args().collect();
     let mut cfg = config::load(PathBuf::from("alterware-launcher.json"));
 
-    if args.contains(&String::from("update")) {
-        cfg.update_only = true;
-        args.iter()
-            .position(|r| r == "update")
-            .map(|e| args.remove(e));
-    }
-
-    if !args.contains(&String::from("skip-launcher-update")) && !cfg.skip_self_update {
+    if !arg_bool(&args, "--skip-launcher-update") && !cfg.skip_self_update {
         self_update::run(cfg.update_only);
     } else {
-        args.iter()
-            .position(|r| r == "skip-launcher-update")
-            .map(|e| args.remove(e));
+        arg_remove(&mut args, "--skip-launcher-update");
     }
 
-    if args.contains(&String::from("bonus")) {
+    if arg_bool(&args, "--update") || arg_bool(&args, "-u") {
+        cfg.update_only = true;
+        arg_remove(&mut args, "--update");
+        arg_remove(&mut args, "-u");
+    }
+
+    if arg_bool(&args, "--bonus") {
         cfg.download_bonus_content = true;
-        args.iter()
-            .position(|r| r == "bonus")
-            .map(|e| args.remove(e));
+        arg_remove(&mut args, "--bonus");
     }
 
-    if args.contains(&String::from("force")) {
+    if arg_bool(&args, "--force") || arg_bool(&args, "-f") {
         cfg.force_update = true;
-        args.iter()
-            .position(|r| r == "force")
-            .map(|e| args.remove(e));
+        arg_remove(&mut args, "--force");
+        arg_remove(&mut args, "-f");
     }
 
     let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());

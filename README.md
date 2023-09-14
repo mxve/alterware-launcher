@@ -16,11 +16,18 @@
 
 #### Command line arguments
 
-- Passing ```iw4-sp```, ```iw4x```, ```iw5-mod```, ```iw6-mod``` or ```s1-mod``` as the first argument will skip automatic game detection
-- Passing ```update``` will stop the launcher from launching the game
-- ```skip-launcher-update``` skips launcher self-update
-- ```bonus``` download bonus content
-- ```force``` forces file hash recheck
+- ```iw4-sp```, ```iw4x```, ```iw5-mod```, ```iw6-mod```, ```s1-mod```
+  - Skip automatic detection and launch the specified game
+- ```--update```, ```-u```
+  - Only update the game, don't launch it
+- ```--skip-launcher-update```
+  - Don't update the launcher
+- ```--bonus```
+  - Download bonus content
+- ```--force```, ```-f```
+  - Force file hash recheck
+
+Example: ```alterware-launcher.exe iw4x --bonus -u```
 
 Some arguments can be set in alterware-launcher.json, args generally override the values of the config.
 
