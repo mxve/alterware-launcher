@@ -308,6 +308,43 @@ fn main() {
 
     let mut args: Vec<String> = std::env::args().collect();
 
+    if arg_bool(&args, "--help") {
+        println!("CLI Args:");
+        println!("    <client>: Specify the client to launch");
+        println!("    --help: Display this help message");
+        println!("    --version: Display the launcher version");
+        println!("    --path/-p <path>: Specify the game directory");
+        println!("    --update/-u: Update only, don't launch the game");
+        println!("    --bonus: Download bonus content");
+        println!("    --force/-f: Force file hash recheck");
+        println!("    --pass <args>: Pass arguments to the game");
+        println!("    --skip-launcher-update: Skip launcher self-update");
+        println!(
+            "\nExample:\n    alterware-launcher.exe iw4x --bonus --pass \"-console -nointro\""
+        );
+        std::process::exit(0);
+    }
+
+    if arg_bool(&args, "--version") || arg_bool(&args, "-v") {
+        println!(
+            "{} v{}",
+            "AlterWare Launcher".bright_green(),
+            env!("CARGO_PKG_VERSION")
+        );
+        println!("https://github.com/{}/{}", GH_OWNER, GH_REPO);
+        println!(
+            "\n{}{}{}{}{}{}{}",
+            "For ".on_black(),
+            "Alter".bright_blue().on_black().underline(),
+            "Ware".white().on_black().underline(),
+            ".dev".on_black().underline(),
+            " by ".on_black(),
+            "mxve".bright_magenta().on_black().underline(),
+            ".de".on_black().underline()
+        );
+        std::process::exit(0);
+    }
+
     let install_path: PathBuf;
     if let Some(path) = arg_value(&args, "--path") {
         install_path = PathBuf::from(path);
@@ -347,10 +384,8 @@ fn main() {
     if let Some(pass) = arg_value(&args, "--pass") {
         cfg.args = pass;
         arg_remove_value(&mut args, "--pass");
-    } else {
-        if cfg.args.is_empty() {
-            cfg.args = String::from("");
-        }
+    } else if cfg.args.is_empty() {
+        cfg.args = String::from("");
     }
 
     let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());

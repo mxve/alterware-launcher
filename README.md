@@ -18,6 +18,7 @@
 
 - ```iw4-sp```, ```iw4x```, ```iw5-mod```, ```iw6-mod```, ```s1-mod```
   - Skip automatic detection and launch the specified game
+    - This should always be the first argument if used
 - ```--update```, ```-u```
   - Only update the game, don't launch it
 - ```--skip-launcher-update```
@@ -31,6 +32,8 @@
     - Do not include a trailing backslash in the path
 - ```--pass```
   - Pass additional arguments to the game
+- ```--version```, ```-v```
+  - Print the launcher version
 
 Example: ```alterware-launcher.exe iw4x --bonus -u --path "C:\Games\IW4x" --pass "-console"```
 
