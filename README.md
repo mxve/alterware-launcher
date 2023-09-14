@@ -62,7 +62,7 @@ When the launcher updates itself it needs to be restarted. It will return exit c
 ```
 @echo off
 :loop
-start /wait alterware-launcher.exe update
+start /wait alterware-launcher.exe --update
 if %errorlevel% equ 201 (
     goto loop
 )
