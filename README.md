@@ -26,6 +26,8 @@
   - Download bonus content
 - ```--force```, ```-f```
   - Force file hash recheck
+- ```--path```, ```-p```
+  - Set the game path
 
 Example: ```alterware-launcher.exe iw4x --bonus -u```
 

@@ -104,7 +104,6 @@ fn windows_launcher_install(games: &Vec<Game>) {
     let installed_games = get_installed_games(games);
 
     if !installed_games.is_empty() {
-        // if current directory is in the steamapps/common folder of a game, use that game
         let current_dir = std::env::current_dir().unwrap();
         for (id, path) in installed_games.iter() {
             if current_dir.starts_with(path) {
@@ -282,7 +281,8 @@ fn setup_env() {
 }
 
 fn arg_value(args: &[String], arg: &str) -> Option<String> {
-    let val = args.iter()
+    let val = args
+        .iter()
         .position(|r| r == arg)
         .map(|e| args[e + 1].clone());
     if let Some(ref val) = val {
@@ -331,6 +331,17 @@ fn main() {
         arg_remove(&mut args, "-f");
     }
 
+    let install_path: PathBuf;
+    if let Some(path) = arg_value(&args, "--path") {
+        install_path = PathBuf::from(path);
+        arg_remove(&mut args, "--path");
+    } else if let Some(path) = arg_value(&args, "-p") {
+        install_path = PathBuf::from(path);
+        arg_remove(&mut args, "-p");
+    } else {
+        install_path = std::env::current_dir().unwrap();
+    }
+
     let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());
     let games: Vec<Game> = serde_json::from_str(&games_json).unwrap();
 
@@ -374,12 +385,12 @@ fn main() {
                     let input = misc::stdin().to_ascii_lowercase();
                     cfg.download_bonus_content = input != "n";
                     config::save_value(
-                        PathBuf::from("alterware-launcher.json"),
+                        install_path.join("alterware-launcher.json"),
                         "download_bonus_content",
                         cfg.download_bonus_content,
                     );
                     config::save_value(
-                        PathBuf::from("alterware-launcher.json"),
+                        install_path.join("alterware-launcher.json"),
                         "ask_bonus_content",
                         false,
                     );
@@ -387,12 +398,12 @@ fn main() {
 
                 update(
                     g,
-                    &std::env::current_dir().unwrap(),
+                    install_path.as_path(),
                     cfg.download_bonus_content,
                     cfg.force_update,
                 );
                 if !cfg.update_only {
-                    launch(&PathBuf::from(format!("{}.exe", c)));
+                    launch(&install_path.join(format!("{}.exe", c)));
                 }
                 return;
             }
