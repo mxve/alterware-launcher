@@ -322,7 +322,7 @@ fn main() {
         println!(
             "\nExample:\n    alterware-launcher.exe iw4x --bonus --pass \"-console -nointro\""
         );
-        std::process::exit(0);
+        return;
     }
 
     if arg_bool(&args, "--version") || arg_bool(&args, "-v") {
@@ -342,7 +342,7 @@ fn main() {
             "mxve".bright_magenta().on_black().underline(),
             ".de".on_black().underline()
         );
-        std::process::exit(0);
+        return;
     }
 
     let install_path: PathBuf;
