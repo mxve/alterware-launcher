@@ -264,9 +264,9 @@ fn update(game: &Game, dir: &Path, bonus_content: bool, force: bool) {
 }
 
 fn launch(file_path: &PathBuf, args: &str) {
-    println!("Launching {}...", file_path.display());
+    println!("Launching {} {}", file_path.display(), args);
     std::process::Command::new(file_path)
-        .args(args.split(' '))
+        .args(args.trim().split(' '))
         .spawn()
         .expect("Failed to launch the game")
         .wait()
