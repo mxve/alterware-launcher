@@ -13,7 +13,7 @@ pub fn load(config_path: PathBuf) -> Config {
 }
 
 pub fn save(config_path: PathBuf, config: Config) {
-    fs::write(config_path, serde_json::to_string(&config).unwrap()).unwrap();
+    fs::write(config_path, serde_json::to_string_pretty(&config).unwrap()).unwrap();
 }
 
 pub fn save_value(config_path: PathBuf, key: &str, value: bool) {
