@@ -267,6 +267,7 @@ fn launch(file_path: &PathBuf, args: &str) {
     println!("Launching {} {}", file_path.display(), args);
     std::process::Command::new(file_path)
         .args(args.trim().split(' '))
+        .current_dir(file_path.parent().unwrap())
         .spawn()
         .expect("Failed to launch the game")
         .wait()
