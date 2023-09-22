@@ -373,6 +373,7 @@ fn main() {
 
     if arg_bool(&args, "--bonus") {
         cfg.download_bonus_content = true;
+        cfg.ask_bonus_content = false;
         arg_remove(&mut args, "--bonus");
     }
 
