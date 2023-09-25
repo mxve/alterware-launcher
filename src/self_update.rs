@@ -60,10 +60,17 @@ pub fn run(update_only: bool) {
             fs::remove_file(&update_binary).unwrap();
         }
 
+        let launcher_name = if cfg!(target_arch = "x86") {
+            "alterware-launcher-x86.exe"
+        } else {
+            "alterware-launcher.exe"
+        };
+        println!("{}", launcher_name);
         http::download_file(
             &format!(
-                "{}/download/alterware-launcher.exe",
-                github::latest_release_url(GH_OWNER, GH_REPO)
+                "{}/download/{}",
+                github::latest_release_url(GH_OWNER, GH_REPO),
+                launcher_name
             ),
             &file_path,
         );
