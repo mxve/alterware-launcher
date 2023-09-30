@@ -38,25 +38,34 @@ fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
 }
 
 #[cfg(windows)]
+fn create_shortcut(path: &Path, target: &Path, icon: String, args: String) {
+    if let Ok(mut sl) = ShellLink::new(target) {
+        sl.set_arguments(Some(args));
+        sl.set_icon_location(Some(icon));
+        sl.create_lnk(path).unwrap_or_else(|error| {
+            println!("Error creating shortcut.\n{:#?}", error);
+        });
+    } else {
+        println!("Error creating shortcut.");
+    }
+}
+
+#[cfg(windows)]
 fn setup_client_links(game: &Game, game_dir: &Path) {
     if game.client.len() > 1 {
         println!("Multiple clients installed, use the shortcuts (launch-<client>.lnk in the game directory or on the desktop) to launch a specific client.");
     }
 
-    let target = game_dir.join("alterware-launcher.exe");
-
     for c in game.client.iter() {
-        let lnk = game_dir.join(format!("launch-{}.lnk", c));
-
-        let mut sl = ShellLink::new(target.clone()).unwrap();
-        sl.set_arguments(Some(c.to_string()));
-        sl.set_icon_location(Some(
+        create_shortcut(
+            &game_dir.join(format!("launch-{}.lnk", c)),
+            &game_dir.join("alterware-launcher.exe"),
             game_dir
                 .join(format!("{}.exe", c))
                 .to_string_lossy()
                 .into_owned(),
-        ));
-        sl.create_lnk(&lnk).unwrap();
+            c.to_string(),
+        );
     }
 }
 
@@ -71,19 +80,15 @@ fn setup_desktop_links(path: &Path, game: &Game) {
             std::env::var("USERPROFILE").unwrap()
         ));
 
-        let target = path.join("alterware-launcher.exe");
-
         for c in game.client.iter() {
-            let lnk = desktop.join(format!("{}.lnk", c));
-
-            let mut sl = ShellLink::new(target.clone()).unwrap();
-            sl.set_arguments(Some(c.to_string()));
-            sl.set_icon_location(Some(
+            create_shortcut(
+                &desktop.join(format!("{}.lnk", c)),
+                &path.join("alterware-launcher.exe"),
                 path.join(format!("{}.exe", c))
                     .to_string_lossy()
                     .into_owned(),
-            ));
-            sl.create_lnk(lnk).unwrap();
+                c.to_string(),
+            );
         }
     }
 }
