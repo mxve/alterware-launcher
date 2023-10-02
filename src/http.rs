@@ -54,6 +54,21 @@ pub fn download_file(url: &str, file_path: &Path) {
             }
         },
         Err(e) => {
+            match e.kind() {
+                std::io::ErrorKind::NotFound => {
+                    fs::create_dir_all(file_path.parent().unwrap()).unwrap();
+                    return download_file(url, file_path);
+                }
+                std::io::ErrorKind::PermissionDenied => {
+                    misc::fatal_error(&format!(
+                        "Permission to {} denied.\n  Please try:\n    1. Running the launcher as administrator.\n    2. Manually deleting the last downloaded file.\n    3. If your game is in the program files directory try moving it to another location.\n\n\n{}",
+                        file_path.to_str().unwrap(),
+                        e
+                    ));
+                }
+                _ => (),
+            }
+
             misc::fatal_error(&format!(
                 "Could not create file {}, got:\n{}",
                 file_path.to_str().unwrap(),
