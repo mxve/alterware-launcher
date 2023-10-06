@@ -13,17 +13,18 @@ pub fn load(config_path: PathBuf) -> Config {
 }
 
 pub fn save(config_path: PathBuf, config: Config) {
-    match fs::write(config_path.clone(), serde_json::to_string_pretty(&config).unwrap()) {
+    match fs::write(
+        config_path.clone(),
+        serde_json::to_string_pretty(&config).unwrap(),
+    ) {
         Ok(_) => (),
-        Err(e) => {
-            match e.kind() {
-                std::io::ErrorKind::NotFound => {
-                    fs::create_dir_all(config_path.parent().unwrap()).unwrap();
-                    return save(config_path, config);
-                }
-                _ => println!("Could not save config file, got:\n{}\n", e),
+        Err(e) => match e.kind() {
+            std::io::ErrorKind::NotFound => {
+                fs::create_dir_all(config_path.parent().unwrap()).unwrap();
+                save(config_path, config);
             }
-        }
+            _ => println!("Could not save config file, got:\n{}\n", e),
+        },
     }
 }
 

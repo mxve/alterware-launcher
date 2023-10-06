@@ -1,3 +1,4 @@
+use crate::global;
 use crate::misc;
 use std::{fs, io::Write, path::Path, str};
 
@@ -7,7 +8,11 @@ pub fn get_body(url: &str) -> Vec<u8> {
     match http_req::request::Request::new(&url.try_into().unwrap())
         .header(
             "User-Agent",
-            "AlterWare Launcher | github.com/mxve/alterware-launcher",
+            &format!(
+                "AlterWare Launcher | github.com/{}/{}",
+                global::GH_OWNER,
+                global::GH_REPO
+            ),
         )
         .send(&mut res)
     {
