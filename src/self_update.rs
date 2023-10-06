@@ -29,6 +29,7 @@ pub fn run(_update_only: bool) {
 pub fn run(update_only: bool) {
     use std::{fs, path::PathBuf};
 
+    use crate::misc;
     use crate::http;
 
     let working_dir = std::env::current_dir().unwrap();
@@ -82,9 +83,10 @@ pub fn run(update_only: bool) {
 
         self_replace::self_replace("alterware-launcher-update.exe").unwrap();
         fs::remove_file(&file_path).unwrap();
-        println!("Launcher updated. Please run it again.");
+        println!("Launcher updated. View the changelog at https://github.com/{}/{}/releases/latest", GH_OWNER, GH_REPO,);
+        println!("Please restart the launcher.");
         if !update_only {
-            std::io::stdin().read_line(&mut String::new()).unwrap();
+            misc::stdin();
         }
         std::process::exit(201);
     }
