@@ -32,12 +32,37 @@
     - Do not include a trailing backslash in the path
 - ```--pass```
   - Pass additional arguments to the game
+    - See [client-args.md](client-args.md)
 - ```--version```, ```-v```
   - Print the launcher version
 
 Example: ```alterware-launcher.exe iw4x --bonus -u --path "C:\Games\IW4x" --pass "-console"```
 
 Some arguments can be set in alterware-launcher.json, args generally override the values of the config.
+
+---
+
+#### Config file
+alterware-launcher.json
+
+- ```update_only```
+  - See --update
+  - Default: false
+- ```skip_self_update```
+  - See --skip-launcher-update
+  - Default: false
+- ```download_bonus_content```
+  - See --bonus
+  - Default: false
+- ```ask_bonus_content```
+  - Ask the user if they want to download bonus content
+  - Default: true; false after asking
+- ```force_update```
+  - See --force
+  - Default: false
+- ```args```
+  - See --pass
+  - Default: ""
 
 ---
 
