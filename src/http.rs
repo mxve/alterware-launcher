@@ -66,7 +66,7 @@ pub fn download_file(url: &str, file_path: &Path) {
                 }
                 std::io::ErrorKind::PermissionDenied => {
                     misc::fatal_error(&format!(
-                        "Permission to {} denied.\n  Please try:\n    1. Running the launcher as administrator.\n    2. Manually deleting the last downloaded file.\n    3. If your game is in the program files directory try moving it to another location.\n\n\n{}",
+                        "Permission to {} denied.\n  Please try:\n    1. Running the launcher as administrator.\n    2. Manually deleting the last downloaded file.\n    3. If your game is in the program files directory try moving it to another location.\n    4. Create an exception/exclusion in your Anti-Virus Software for either the last downloaded file or the entire game directory.\n\n\n{}",
                         file_path.to_str().unwrap(),
                         e
                     ));
