@@ -239,7 +239,7 @@ fn update_dir(
         "[{}]        Downloading outdated or missing files for {}, {}",
         "Info".bright_magenta(),
         remote_dir,
-        misc::human_readable_bytes(total_download_size(&files_to_download, &remote_dir))
+        misc::human_readable_bytes(total_download_size(&files_to_download, remote_dir))
     );
     for file in files_to_download {
         let file_name = &file.name.replace(&format!("{}/", remote_dir), "/");
