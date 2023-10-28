@@ -242,7 +242,7 @@ fn update_dir(
         misc::human_readable_bytes(total_download_size(&files_to_download, remote_dir))
     );
     for file in files_to_download {
-        let file_name = &file.name.replace(&format!("{}/", remote_dir), "/");
+        let file_name = &file.name.replace(&remote_dir_pre, "");
         let file_path = dir.join(file_name);
         println!(
             "[{}] {} ({})",
