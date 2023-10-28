@@ -298,6 +298,7 @@ fn update(game: &Game, dir: &Path, bonus_content: bool, force: bool) {
 }
 
 fn launch(file_path: &PathBuf, args: &str) {
+    println!("\n\nJoin the AlterWare Discord server:\nhttps://discord.gg/2ETE8engZM\n\n");
     println!("Launching {} {}", file_path.display(), args);
     std::process::Command::new(file_path)
         .args(args.trim().split(' '))
