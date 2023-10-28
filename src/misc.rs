@@ -26,3 +26,14 @@ pub fn fatal_error(error: &str) {
     stdin();
     std::process::exit(1);
 }
+
+pub fn human_readable_bytes(bytes: u64) -> String {
+    let mut bytes = bytes as f64;
+    let mut i = 0;
+    let units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+    while bytes > 1024.0 {
+        bytes /= 1024.0;
+        i += 1;
+    }
+    format!("{:.2} {}", bytes, units[i])
+}

@@ -180,21 +180,35 @@ fn manual_install(games: &[Game]) {
     std::process::exit(0);
 }
 
+fn total_download_size(cdn_info: &Vec<CdnFile>, remote_dir: &str) -> u64 {
+    let remote_dir = format!("{}/", remote_dir);
+    let mut size: u64 = 0;
+    for file in cdn_info {
+        if !file.name.starts_with(&remote_dir) || file.name == "iw4/iw4x.dll" {
+            continue;
+        }
+        size += file.size as u64;
+    }
+    size
+}
+
 fn update_dir(
     cdn_info: &Vec<CdnFile>,
     remote_dir: &str,
     dir: &Path,
     hashes: &mut HashMap<String, String>,
 ) {
-    let remote_dir = format!("{}/", remote_dir);
+    let remote_dir_pre = format!("{}/", remote_dir);
+
+    let mut files_to_download: Vec<CdnFile> = vec![];
 
     for file in cdn_info {
-        if !file.name.starts_with(&remote_dir) || file.name == "iw4/iw4x.dll" {
+        if !file.name.starts_with(&remote_dir_pre) || file.name == "iw4/iw4x.dll" {
             continue;
         }
 
         let sha1_remote = file.hash.to_lowercase();
-        let file_name = &file.name.replace(remote_dir.as_str(), "");
+        let file_name = &file.name.replace(remote_dir_pre.as_str(), "");
         let file_path = dir.join(file_name);
         if file_path.exists() {
             let sha1_local = hashes
@@ -204,30 +218,45 @@ fn update_dir(
                 .to_string();
 
             if sha1_local != sha1_remote {
-                println!(
-                    "[{}]    {}",
-                    "Updating".bright_yellow(),
-                    file_path.display()
-                );
-                http::download_file(&format!("{}/{}", MASTER, file.name), &file_path);
+                files_to_download.push(file.clone());
             } else {
                 println!("[{}]     {}", "Checked".bright_blue(), file_path.display());
             }
-            hashes.insert(file_name.to_owned(), sha1_remote.to_owned());
         } else {
-            println!(
-                "[{}] {}",
-                "Downloading".bright_yellow(),
-                file_path.display()
-            );
-            if let Some(parent) = file_path.parent() {
-                if !parent.exists() {
-                    fs::create_dir_all(parent).unwrap();
-                }
-            }
-            http::download_file(&format!("{}/{}", MASTER, file.name), &file_path);
-            hashes.insert(file_name.to_owned(), sha1_remote.to_owned());
+            files_to_download.push(file.clone());
         }
+    }
+
+    if files_to_download.is_empty() {
+        println!(
+            "[{}]        No files to download for {}",
+            "Info".bright_magenta(),
+            remote_dir
+        );
+        return;
+    }
+    println!(
+        "[{}]        Downloading outdated or missing files for {}, {}",
+        "Info".bright_magenta(),
+        remote_dir,
+        misc::human_readable_bytes(total_download_size(&files_to_download, &remote_dir))
+    );
+    for file in files_to_download {
+        let file_name = &file.name.replace(&format!("{}/", remote_dir), "/");
+        let file_path = dir.join(file_name);
+        println!(
+            "[{}] {} ({})",
+            "Downloading".bright_yellow(),
+            file_path.display(),
+            misc::human_readable_bytes(file.size as u64)
+        );
+        if let Some(parent) = file_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent).unwrap();
+            }
+        }
+        http::download_file(&format!("{}/{}", MASTER, file.name), &file_path);
+        hashes.insert(file_name.to_owned(), file.hash.to_lowercase());
     }
 }
 

@@ -1,4 +1,4 @@
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(serde::Deserialize, serde::Serialize, Clone)]
 pub struct CdnFile {
     pub name: String,
     pub size: u32,
