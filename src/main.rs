@@ -2,6 +2,7 @@ mod config;
 mod github;
 mod global;
 mod http;
+mod http_async;
 mod iw4x;
 mod misc;
 mod self_update;
@@ -13,6 +14,8 @@ use structs::*;
 use colored::*;
 #[cfg(windows)]
 use mslnk::ShellLink;
+
+use indicatif::ProgressBar;
 use std::{borrow::Cow, collections::HashMap, fs, path::Path, path::PathBuf};
 #[cfg(windows)]
 use steamlocate::SteamDir;
@@ -94,14 +97,14 @@ fn setup_desktop_links(path: &Path, game: &Game) {
 }
 
 #[cfg(windows)]
-fn auto_install(path: &Path, game: &Game) {
+async fn auto_install(path: &Path, game: &Game<'_>) {
     setup_client_links(game, path);
     setup_desktop_links(path, game);
-    update(game, path, false, false);
+    update(game, path, false, false).await;
 }
 
 #[cfg(windows)]
-fn windows_launcher_install(games: &Vec<Game>) {
+async fn windows_launcher_install(games: &Vec<Game<'_>>) {
     println!(
         "{}",
         "No game specified/found. Checking for installed Steam games..".yellow()
@@ -115,7 +118,7 @@ fn windows_launcher_install(games: &Vec<Game>) {
                 println!("Found game in current directory.");
                 println!("Installing AlterWare client for {}.", id);
                 let game = games.iter().find(|&g| g.app_id == *id).unwrap();
-                auto_install(path, game);
+                auto_install(path, game).await;
                 println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
                 std::io::stdin().read_line(&mut String::new()).unwrap();
                 std::process::exit(0);
@@ -132,7 +135,7 @@ fn windows_launcher_install(games: &Vec<Game>) {
         let input: u32 = misc::stdin().parse().unwrap();
 
         if input == 0 {
-            return manual_install(games);
+            return manual_install(games).await;
         }
 
         for (id, path) in installed_games.iter() {
@@ -146,7 +149,7 @@ fn windows_launcher_install(games: &Vec<Game>) {
                     fs::copy(launcher_path, target_path).unwrap();
                     println!("Launcher copied to {}", path.display());
                 }
-                auto_install(path, game);
+                auto_install(path, game).await;
                 println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
                 std::io::stdin().read_line(&mut String::new()).unwrap();
                 break;
@@ -154,7 +157,7 @@ fn windows_launcher_install(games: &Vec<Game>) {
         }
         std::process::exit(0);
     } else {
-        manual_install(games);
+        manual_install(games).await;
     }
 }
 
@@ -171,10 +174,10 @@ fn prompt_client_selection(games: &[Game]) -> String {
     String::from(games[input].client[0])
 }
 
-fn manual_install(games: &[Game]) {
+async fn manual_install(games: &[Game<'_>]) {
     let selection = prompt_client_selection(games);
     let game = games.iter().find(|&g| g.client[0] == selection).unwrap();
-    update(game, &std::env::current_dir().unwrap(), false, false);
+    update(game, &std::env::current_dir().unwrap(), false, false).await;
     println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
     std::io::stdin().read_line(&mut String::new()).unwrap();
     std::process::exit(0);
@@ -192,12 +195,15 @@ fn total_download_size(cdn_info: &Vec<CdnFile>, remote_dir: &str) -> u64 {
     size
 }
 
-fn update_dir(
+async fn update_dir(
     cdn_info: &Vec<CdnFile>,
     remote_dir: &str,
     dir: &Path,
     hashes: &mut HashMap<String, String>,
+    pb: &ProgressBar,
 ) {
+    misc::pb_style_download(pb, false);
+
     let remote_dir_pre = format!("{}/", remote_dir);
 
     let mut files_to_download: Vec<CdnFile> = vec![];
@@ -220,7 +226,11 @@ fn update_dir(
             if sha1_local != sha1_remote {
                 files_to_download.push(file.clone());
             } else {
-                println!("[{}]     {}", "Checked".bright_blue(), file_path.display());
+                pb.println(format!(
+                    "[{}]     {}",
+                    "Checked".bright_blue(),
+                    misc::cute_path(&file_path)
+                ));
             }
         } else {
             files_to_download.push(file.clone());
@@ -228,39 +238,45 @@ fn update_dir(
     }
 
     if files_to_download.is_empty() {
-        println!(
+        pb.println(format!(
             "[{}]        No files to download for {}",
             "Info".bright_magenta(),
             remote_dir
-        );
+        ));
         return;
     }
-    println!(
+    pb.println(format!(
         "[{}]        Downloading outdated or missing files for {}, {}",
         "Info".bright_magenta(),
         remote_dir,
         misc::human_readable_bytes(total_download_size(&files_to_download, remote_dir))
-    );
+    ));
+
+    misc::pb_style_download(pb, true);
+    let client = reqwest::Client::new();
     for file in files_to_download {
         let file_name = &file.name.replace(&remote_dir_pre, "");
         let file_path = dir.join(file_name);
-        println!(
-            "[{}] {} ({})",
-            "Downloading".bright_yellow(),
-            file_path.display(),
-            misc::human_readable_bytes(file.size as u64)
-        );
         if let Some(parent) = file_path.parent() {
             if !parent.exists() {
                 fs::create_dir_all(parent).unwrap();
             }
         }
-        http::download_file(&format!("{}/{}", MASTER, file.name), &file_path);
+        http_async::download_file(
+            &client,
+            pb,
+            &format!("{}/{}", MASTER, file.name),
+            &file_path,
+            file.size as u64,
+        )
+        .await
+        .unwrap();
         hashes.insert(file_name.to_owned(), file.hash.to_lowercase());
     }
+    misc::pb_style_download(pb, false);
 }
 
-fn update(game: &Game, dir: &Path, bonus_content: bool, force: bool) {
+async fn update(game: &Game<'_>, dir: &Path, bonus_content: bool, force: bool) {
     let cdn_info: Vec<CdnFile> = serde_json::from_str(&http::get_body_string(
         format!("{}/files.json", MASTER).as_str(),
     ))
@@ -278,17 +294,20 @@ fn update(game: &Game, dir: &Path, bonus_content: bool, force: bool) {
         }
     }
 
-    update_dir(&cdn_info, game.engine, dir, &mut hashes);
-
     if game.engine == "iw4" {
         iw4x::update(dir);
     }
 
+    let pb = ProgressBar::new(0);
+    update_dir(&cdn_info, game.engine, dir, &mut hashes, &pb).await;
+
     if bonus_content && !game.bonus.is_empty() {
         for bonus in game.bonus.iter() {
-            update_dir(&cdn_info, bonus, dir, &mut hashes);
+            update_dir(&cdn_info, bonus, dir, &mut hashes, &pb).await;
         }
     }
+
+    pb.finish();
 
     let mut hash_file_content = String::new();
     for (file, hash) in hashes.iter() {
@@ -338,7 +357,8 @@ fn arg_remove_value(args: &mut Vec<String>, arg: &str) {
     };
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     #[cfg(windows)]
     setup_env();
 
@@ -422,7 +442,7 @@ fn main() {
         cfg.args = pass;
         arg_remove_value(&mut args, "--pass");
     } else if cfg.args.is_empty() {
-        cfg.args = String::from("");
+        cfg.args = String::default();
     }
 
     let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());
@@ -484,7 +504,8 @@ fn main() {
                     install_path.as_path(),
                     cfg.download_bonus_content,
                     cfg.force_update,
-                );
+                )
+                .await;
                 if !cfg.update_only {
                     launch(&install_path.join(format!("{}.exe", c)), &cfg.args);
                 }
@@ -494,10 +515,10 @@ fn main() {
     }
 
     #[cfg(windows)]
-    windows_launcher_install(&games);
+    windows_launcher_install(&games).await;
 
     #[cfg(not(windows))]
-    manual_install(&games);
+    manual_install(&games).await;
 
     println!("{}", "Game not found!".bright_red());
     println!("Place the launcher in the game folder, if that doesn't work specify the client on the command line (ex. alterware-launcher.exe iw4-sp)");

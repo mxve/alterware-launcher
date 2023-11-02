@@ -32,7 +32,7 @@ impl Default for Config {
             download_bonus_content: false,
             ask_bonus_content: true,
             force_update: false,
-            args: String::from(""),
+            args: String::default(),
         }
     }
 }

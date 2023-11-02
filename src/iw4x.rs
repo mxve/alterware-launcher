@@ -23,13 +23,21 @@ pub fn update(dir: &Path) {
     let local = local_revision(dir);
 
     if remote <= local && dir.join("iw4x.dll").exists() {
+        println!(
+            "[{}]        No files to download for IW4x",
+            "Info".bright_magenta(),
+        );
         return;
     }
 
     println!(
+        "[{}]        Downloading outdated or missing files for IW4x",
+        "Info".bright_magenta()
+    );
+    println!(
         "[{}] {}",
         "Downloading".bright_yellow(),
-        dir.join("iw4x.dll").display()
+        misc::cute_path(&dir.join("iw4x.dll"))
     );
     http::download_file(
         &format!(
