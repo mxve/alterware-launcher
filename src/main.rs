@@ -294,12 +294,12 @@ async fn update(game: &Game<'_>, dir: &Path, bonus_content: bool, force: bool) {
         }
     }
 
-    let pb = ProgressBar::new(0);
-    update_dir(&cdn_info, game.engine, dir, &mut hashes, &pb).await;
-
     if game.engine == "iw4" {
         iw4x::update(dir);
     }
+
+    let pb = ProgressBar::new(0);
+    update_dir(&cdn_info, game.engine, dir, &mut hashes, &pb).await;
 
     if bonus_content && !game.bonus.is_empty() {
         for bonus in game.bonus.iter() {
