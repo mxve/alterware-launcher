@@ -1,6 +1,10 @@
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use colored::Colorize;
+use indicatif::{ProgressBar, ProgressStyle};
 
 pub fn get_file_sha1(path: &PathBuf) -> String {
     let mut sha1 = sha1_smol::Sha1::new();
@@ -35,5 +39,20 @@ pub fn human_readable_bytes(bytes: u64) -> String {
         bytes /= 1024.0;
         i += 1;
     }
-    format!("{:.2} {}", bytes, units[i])
+    format!("{:.2}{}", bytes, units[i])
+}
+
+pub fn pb_style_download(pb: &ProgressBar, state: bool) {
+    if state {
+        pb.set_style(
+            ProgressStyle::with_template("{spinner:.magenta} {msg:.magenta} > {bytes}/{total_bytes} | {bytes_per_sec} | {eta}")
+                .unwrap(),
+        );
+    } else {
+        pb.set_style(ProgressStyle::with_template("{spinner:.magenta} {msg}").unwrap());
+    }
+}
+
+pub fn cute_path(path: &Path) -> String {
+    path.to_str().unwrap().replace('\\', "/")
 }
