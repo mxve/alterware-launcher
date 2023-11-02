@@ -442,7 +442,7 @@ async fn main() {
         cfg.args = pass;
         arg_remove_value(&mut args, "--pass");
     } else if cfg.args.is_empty() {
-        cfg.args = String::from("");
+        cfg.args = String::default();
     }
 
     let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());

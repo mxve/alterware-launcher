@@ -47,6 +47,6 @@ pub async fn download_file(
         pb.set_position(new);
     }
 
-    pb.set_message("");
+    pb.set_message(String::default());
     Ok(())
 }
