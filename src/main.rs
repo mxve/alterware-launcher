@@ -518,7 +518,7 @@ async fn main() {
     windows_launcher_install(&games).await;
 
     #[cfg(not(windows))]
-    manual_install(&games);
+    manual_install(&games).await;
 
     println!("{}", "Game not found!".bright_red());
     println!("Place the launcher in the game folder, if that doesn't work specify the client on the command line (ex. alterware-launcher.exe iw4-sp)");
