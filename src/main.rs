@@ -12,11 +12,10 @@ use global::*;
 use structs::*;
 
 use colored::*;
+use indicatif::ProgressBar;
 #[cfg(windows)]
 use mslnk::ShellLink;
-
-use indicatif::ProgressBar;
-use std::{borrow::Cow, collections::HashMap, fs, path::Path, path::PathBuf};
+use std::{borrow::Cow, collections::HashMap, env, fs, path::Path, path::PathBuf};
 #[cfg(windows)]
 use steamlocate::SteamDir;
 
@@ -78,10 +77,7 @@ fn setup_desktop_links(path: &Path, game: &Game) {
     let input = misc::stdin().to_ascii_lowercase();
 
     if input == "y" || input.is_empty() {
-        let desktop = PathBuf::from(&format!(
-            "{}\\Desktop",
-            std::env::var("USERPROFILE").unwrap()
-        ));
+        let desktop = PathBuf::from(&format!("{}\\Desktop", env::var("USERPROFILE").unwrap()));
 
         for c in game.client.iter() {
             create_shortcut(
@@ -112,7 +108,7 @@ async fn windows_launcher_install(games: &Vec<Game<'_>>) {
     let installed_games = get_installed_games(games);
 
     if !installed_games.is_empty() {
-        let current_dir = std::env::current_dir().unwrap();
+        let current_dir = env::current_dir().unwrap();
         for (id, path) in installed_games.iter() {
             if current_dir.starts_with(path) {
                 println!("Found game in current directory.");
@@ -142,7 +138,7 @@ async fn windows_launcher_install(games: &Vec<Game<'_>>) {
             if *id == input {
                 let game = games.iter().find(|&g| g.app_id == input).unwrap();
 
-                let launcher_path = std::env::current_exe().unwrap();
+                let launcher_path = env::current_exe().unwrap();
                 let target_path = path.join("alterware-launcher.exe");
 
                 if launcher_path != target_path {
@@ -177,7 +173,7 @@ fn prompt_client_selection(games: &[Game]) -> String {
 async fn manual_install(games: &[Game<'_>]) {
     let selection = prompt_client_selection(games);
     let game = games.iter().find(|&g| g.client[0] == selection).unwrap();
-    update(game, &std::env::current_dir().unwrap(), false, false).await;
+    update(game, &env::current_dir().unwrap(), false, false).await;
     println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
     std::io::stdin().read_line(&mut String::new()).unwrap();
     std::process::exit(0);
@@ -366,7 +362,7 @@ async fn main() {
     #[cfg(windows)]
     setup_env();
 
-    let mut args: Vec<String> = std::env::args().collect();
+    let mut args: Vec<String> = env::args().collect();
 
     if arg_bool(&args, "--help") {
         println!("CLI Args:");
@@ -413,7 +409,7 @@ async fn main() {
         install_path = PathBuf::from(path);
         arg_remove_value(&mut args, "-p");
     } else {
-        install_path = std::env::current_dir().unwrap();
+        install_path = env::current_dir().unwrap();
     }
 
     let mut cfg = config::load(install_path.join("alterware-launcher.json"));
@@ -466,7 +462,7 @@ async fn main() {
                         }
 
                         #[cfg(windows)]
-                        setup_client_links(g, &std::env::current_dir().unwrap());
+                        setup_client_links(g, &env::current_dir().unwrap());
 
                         #[cfg(not(windows))]
                         println!("Multiple clients installed, set the client as the first argument to launch a specific client.");
