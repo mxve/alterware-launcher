@@ -334,6 +334,10 @@ fn setup_env() {
         println!("{:#?}", error);
         colored::control::SHOULD_COLORIZE.set_override(false);
     });
+
+    if let Ok(current_exe) = env::current_exe() {
+        env::set_current_dir(binary_path_str);
+    }
 }
 
 fn arg_value(args: &[String], arg: &str) -> Option<String> {
