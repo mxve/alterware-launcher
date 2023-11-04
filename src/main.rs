@@ -331,8 +331,20 @@ fn setup_env() {
         colored::control::SHOULD_COLORIZE.set_override(false);
     });
 
-    if let Ok(current_exe) = env::current_exe() {
-        env::set_current_dir(binary_path_str);
+    if let Ok(system_root) = env::var("SystemRoot") {
+        if let Ok(current_dir) = env::current_dir() {
+            if current_dir.starts_with(system_root) {
+                if let Ok(current_exe) = env::current_exe() {
+                    if let Some(parent) = current_exe.parent() {
+                        if let Err(error) = env::set_current_dir(parent) {
+                            eprintln!("{:#?}", error);
+                        } else {
+                            println!("Running from the system directory. Changed working directory to the executable location.");
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
