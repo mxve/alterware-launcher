@@ -31,7 +31,7 @@ pub async fn download_file(
         misc::cute_path(path),
         misc::human_readable_bytes(total_size)
     ));
-    pb.set_message(format!("{}", path.file_name().unwrap().to_str().unwrap()));
+    pb.set_message(path.file_name().unwrap().to_str().unwrap().to_string());
 
     let mut file =
         File::create(path).or(Err(format!("Failed to create file '{}'", path.display())))?;
