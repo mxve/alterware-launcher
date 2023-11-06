@@ -27,7 +27,6 @@ pub fn run(_update_only: bool, _args: Vec<String>) {
 
 #[cfg(windows)]
 pub fn restart() -> std::io::Error {
-pub fn restart() -> std::io::Error {
     use std::os::windows::process::CommandExt;
     match std::process::Command::new(std::env::current_exe().unwrap())
         .args(std::env::args().skip(1))
@@ -106,7 +105,6 @@ pub async fn run(update_only: bool) {
 
         // restarting spawns a new console, automation should manually restart on exit code 201
         if !update_only {
-            let restart_error = restart().to_string();
             let restart_error = restart().to_string();
             println!("Failed to restart launcher: {}", restart_error);
             println!("Please restart the launcher manually.");
