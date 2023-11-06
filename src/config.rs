@@ -4,7 +4,7 @@ use std::{fs, path::PathBuf};
 
 pub fn load(config_path: PathBuf) -> Config {
     if config_path.exists() {
-        let cfg = fs::read_to_string(&config_path).unwrap();
+        let cfg = fs::read_to_string(&config_path).unwrap_or(String::default());
         let cfg: Config = serde_json::from_str(&cfg).unwrap_or(Config::default());
         return cfg;
     }

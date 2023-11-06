@@ -25,7 +25,7 @@ pub fn rev_to_int(rev: &str) -> u16 {
         .unwrap_or(0)
 }
 
-pub fn fatal_error(error: &str) {
+pub fn _fatal_error(error: &str) {
     println!("\n\n{}:\n{}", "Error".bright_red(), error);
     stdin();
     std::process::exit(1);

@@ -1,7 +1,6 @@
 mod config;
 mod github;
 mod global;
-mod http;
 mod http_async;
 mod iw4x;
 mod misc;
@@ -259,7 +258,7 @@ async fn update_dir(
                 fs::create_dir_all(parent).unwrap();
             }
         }
-        http_async::download_file(
+        http_async::download_file_shared_client(
             &client,
             pb,
             &format!("{}/{}", MASTER, file.name),
@@ -274,9 +273,11 @@ async fn update_dir(
 }
 
 async fn update(game: &Game<'_>, dir: &Path, bonus_content: bool, force: bool) {
-    let cdn_info: Vec<CdnFile> = serde_json::from_str(&http::get_body_string(
-        format!("{}/files.json", MASTER).as_str(),
-    ))
+    let cdn_info: Vec<CdnFile> = serde_json::from_str(
+        &http_async::get_body_string(format!("{}/files.json", MASTER).as_str())
+            .await
+            .unwrap(),
+    )
     .unwrap();
 
     let mut hashes = HashMap::new();
@@ -292,7 +293,7 @@ async fn update(game: &Game<'_>, dir: &Path, bonus_content: bool, force: bool) {
     }
 
     if game.engine == "iw4" {
-        iw4x::update(dir);
+        iw4x::update(dir).await;
     }
 
     let pb = ProgressBar::new(0);
@@ -428,7 +429,7 @@ async fn main() {
     let mut cfg = config::load(install_path.join("alterware-launcher.json"));
 
     if !arg_bool(&args, "--skip-launcher-update") && !cfg.skip_self_update {
-        self_update::run(cfg.update_only);
+        self_update::run(cfg.update_only).await;
     } else {
         arg_remove(&mut args, "--skip-launcher-update");
     }
@@ -458,7 +459,9 @@ async fn main() {
         cfg.args = String::default();
     }
 
-    let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());
+    let games_json = http_async::get_body_string(format!("{}/games.json", MASTER).as_str())
+        .await
+        .unwrap();
     let games: Vec<Game> = serde_json::from_str(&games_json).unwrap();
 
     let mut game: String = String::new();

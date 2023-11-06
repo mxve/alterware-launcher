@@ -15,9 +15,6 @@ panic = "abort"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-http_req = { version = "0.10.1", default-features = false, features = [
-    "rust-tls",
-] }
 sha1_smol = "1.0.0"
 serde = { version = "1.0.190", features = ["derive"] }
 serde_json = "1.0.107"
@@ -28,6 +25,7 @@ reqwest = { version = "0.11.22", features = ["stream"] }
 futures-util = "0.3.29"
 indicatif = "0.17.7"
 tokio = {version="1.33.0", features = ["rt-multi-thread", "macros"]}
+async-recursion = "1.0.5"
 
 [target.'cfg(windows)'.dependencies]
 steamlocate = "2.0.0-alpha.0"
