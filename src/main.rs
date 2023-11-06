@@ -374,7 +374,6 @@ fn arg_remove_value(args: &mut Vec<String>, arg: &str) {
 async fn main() {
     #[cfg(windows)]
     setup_env();
-
     let mut args: Vec<String> = env::args().collect();
 
     if arg_bool(&args, "--help") {
