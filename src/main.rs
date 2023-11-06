@@ -227,6 +227,7 @@ async fn update_dir(
                     "Checked".bright_blue(),
                     misc::cute_path(&file_path)
                 ));
+                hashes.insert(file_name.to_owned(), file.hash.to_lowercase());
             }
         } else {
             files_to_download.push(file.clone());
