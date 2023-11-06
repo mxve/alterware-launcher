@@ -13,7 +13,7 @@ pub async fn self_update_available() -> bool {
 }
 
 #[cfg(not(windows))]
-pub fn run(_update_only: bool) {
+pub fn run(_update_only: bool, _args: Vec<String>) {
     if self_update_available() {
         println!("A new version of the AlterWare launcher is available.");
         println!(
@@ -26,8 +26,20 @@ pub fn run(_update_only: bool) {
 }
 
 #[cfg(windows)]
+pub fn restart() -> std::io::Error {
+    use std::os::windows::process::CommandExt;
+    match std::process::Command::new(std::env::current_exe().unwrap())
+        .args(std::env::args().skip(1))
+        .creation_flags(0x00000010) // CREATE_NEW_CONSOLE
+        .spawn()
+    {
+        Ok(_) => std::process::exit(0),
+        Err(err) => err,
+    }
+}
+
+#[cfg(windows)]
 pub async fn run(update_only: bool) {
-    use crate::misc;
     use std::{fs, path::PathBuf};
 
     let working_dir = std::env::current_dir().unwrap();
@@ -89,13 +101,13 @@ pub async fn run(update_only: bool) {
 
         self_replace::self_replace("alterware-launcher-update.exe").unwrap();
         fs::remove_file(&file_path).unwrap();
-        println!(
-            "Launcher updated. View the changelog at https://github.com/{}/{}/releases/latest",
-            GH_OWNER, GH_REPO,
-        );
-        println!("Please restart the launcher.");
+
+        // restarting spawns a new console, automation should manually restart on exit code 201
         if !update_only {
-            misc::stdin();
+            let restart_error = restart().to_string();
+            println!("Failed to restart launcher: {}", restart_error);
+            println!("Please restart the launcher manually.");
+            crate::misc::stdin();
         }
         std::process::exit(201);
     }

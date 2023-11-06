@@ -377,7 +377,6 @@ async fn main() {
     setup_env();
 
     let mut args: Vec<String> = env::args().collect();
-
     if arg_bool(&args, "--help") {
         println!("CLI Args:");
         println!("    <client>: Specify the client to launch");
