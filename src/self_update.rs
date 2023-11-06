@@ -26,10 +26,10 @@ pub fn run(_update_only: bool, _args: Vec<String>) {
 }
 
 #[cfg(windows)]
-pub fn restart(args: Vec<String>) -> std::io::Error {
+pub fn restart() -> std::io::Error {
     use std::os::windows::process::CommandExt;
     match std::process::Command::new(std::env::current_exe().unwrap())
-        .args(args.into_iter().skip(1))
+        .args(std::env::args().skip(1))
         .creation_flags(0x00000010) // CREATE_NEW_CONSOLE
         .spawn()
     {
@@ -39,7 +39,7 @@ pub fn restart(args: Vec<String>) -> std::io::Error {
 }
 
 #[cfg(windows)]
-pub fn run(update_only: bool, args: Vec<String>) {
+pub fn run(update_only: bool) {
     use std::{fs, path::PathBuf};
 
     use crate::http;
@@ -81,7 +81,7 @@ pub fn run(update_only: bool, args: Vec<String>) {
         } else {
             "alterware-launcher.exe"
         };
-        println!("{}", launcher_name);
+
         http::download_file(
             &format!(
                 "{}/download/{}",
@@ -101,7 +101,7 @@ pub fn run(update_only: bool, args: Vec<String>) {
 
         // restarting spawns a new console, automation should manually restart on exit code 201
         if !update_only {
-            let restart_error = restart(args).to_string();
+            let restart_error = restart().to_string();
             println!("Failed to restart launcher: {}", restart_error);
             println!("Please restart the launcher manually.");
             misc::stdin();

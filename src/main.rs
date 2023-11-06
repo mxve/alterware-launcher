@@ -374,9 +374,7 @@ fn arg_remove_value(args: &mut Vec<String>, arg: &str) {
 async fn main() {
     #[cfg(windows)]
     setup_env();
-
     let mut args: Vec<String> = env::args().collect();
-    let original_args = args.clone();
 
     if arg_bool(&args, "--help") {
         println!("CLI Args:");
@@ -429,7 +427,7 @@ async fn main() {
     let mut cfg = config::load(install_path.join("alterware-launcher.json"));
 
     if !arg_bool(&args, "--skip-launcher-update") && !cfg.skip_self_update {
-        self_update::run(cfg.update_only, original_args);
+        self_update::run(cfg.update_only);
     } else {
         arg_remove(&mut args, "--skip-launcher-update");
     }
