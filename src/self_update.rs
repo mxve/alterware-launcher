@@ -43,7 +43,9 @@ pub fn run(update_only: bool) {
             && (file_name.contains(".__relocated__.exe")
                 || file_name.contains(".__selfdelete__.exe"))
         {
-            fs::remove_file(file.path()).unwrap();
+            fs::remove_file(file.path()).unwrap_or_else(|_| {
+                println!("Failed to remove old launcher file.");
+            });
         }
     }
 
