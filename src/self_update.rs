@@ -13,7 +13,7 @@ pub fn self_update_available() -> bool {
 }
 
 #[cfg(not(windows))]
-pub fn run(_update_only: bool, _args: Vec<String>) {
+pub fn run(_update_only: bool) {
     if self_update_available() {
         println!("A new version of the AlterWare launcher is available.");
         println!(
