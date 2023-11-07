@@ -19,6 +19,14 @@ pub async fn download_file(
 ) -> Result<(), String> {
     let res = client
         .get(url)
+        .header(
+            "User-Agent",
+            &format!(
+                "AlterWare Launcher | github.com/{}/{}",
+                crate::global::GH_OWNER,
+                crate::global::GH_REPO
+            ),
+        )
         .send()
         .await
         .or(Err(format!("Failed to GET from '{}'", &url)))?;
