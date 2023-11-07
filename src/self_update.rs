@@ -30,7 +30,6 @@ pub fn restart() -> std::io::Error {
     use std::os::windows::process::CommandExt;
     match std::process::Command::new(std::env::current_exe().unwrap())
         .args(std::env::args().skip(1))
-        .args(std::env::args().skip(1))
         .creation_flags(0x00000010) // CREATE_NEW_CONSOLE
         .spawn()
     {
