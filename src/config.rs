@@ -40,3 +40,13 @@ pub fn save_value(config_path: PathBuf, key: &str, value: bool) {
     }
     save(config_path, config);
 }
+
+pub fn save_value_s(config_path: PathBuf, key: &str, value: String) {
+    let mut config = load(config_path.clone());
+    match key {
+        "args" => config.args = value.to_string(),
+        "engine" => config.engine = value.to_string(),
+        _ => (),
+    }
+    save(config_path, config);
+}

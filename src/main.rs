@@ -495,6 +495,23 @@ async fn main() {
     for g in games.iter() {
         for c in g.client.iter() {
             if c == &game {
+                if cfg.engine.is_empty() {
+                    cfg.engine = String::from(g.engine);
+                    config::save_value_s(
+                        install_path.join("alterware-launcher.json"),
+                        "engine",
+                        cfg.engine.clone(),
+                    );
+                    if cfg.engine == "iw4" && cfg.args.is_empty() {
+                        cfg.args = String::from("-stdout");
+                        config::save_value_s(
+                            install_path.join("alterware-launcher.json"),
+                            "args",
+                            cfg.args.clone(),
+                        );
+                    }
+                }
+
                 if cfg.ask_bonus_content && !g.bonus.is_empty() {
                     println!("Download bonus content? (Y/n)");
                     let input = misc::stdin().to_ascii_lowercase();

@@ -22,6 +22,8 @@ pub struct Config {
     pub ask_bonus_content: bool,
     pub force_update: bool,
     pub args: String,
+    #[serde(default)]
+    pub engine: String,
 }
 
 impl Default for Config {
@@ -33,6 +35,7 @@ impl Default for Config {
             ask_bonus_content: true,
             force_update: false,
             args: String::default(),
+            engine: String::default(),
         }
     }
 }
