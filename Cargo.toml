@@ -27,6 +27,9 @@ futures-util = "0.3.29"
 indicatif = "0.17.7"
 tokio = {version="1.33.0", features = ["rt-multi-thread", "macros"]}
 
+[target.'cfg(unix)'.dependencies]
+openssl = { version = "0.10.58", default-features = false, features = ["vendored"] }
+
 [target.'cfg(windows)'.dependencies]
 steamlocate = "2.0.0-alpha.0"
 mslnk = "0.1.8"
