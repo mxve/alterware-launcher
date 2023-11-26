@@ -7,9 +7,6 @@ build = "res/build.rs"
 [profile.release]
 opt-level = "s"
 
-# Symbols are a nice thing
-debug = true
-
 panic = "abort"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
