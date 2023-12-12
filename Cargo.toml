@@ -22,7 +22,7 @@ colored = "2.1.0"
 reqwest = { version = "0.11.22", features = ["stream"] }
 futures-util = "0.3.29"
 indicatif = "0.17.7"
-tokio = {version="1.34.0", features = ["rt-multi-thread", "macros"]}
+tokio = {version="1.35.0", features = ["rt-multi-thread", "macros"]}
 
 [target.'cfg(unix)'.dependencies]
 openssl = { version = "0.10.61", default-features = false, features = ["vendored"] }
