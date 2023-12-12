@@ -221,7 +221,7 @@ async fn update_dir(
 
             // Because we don't know here what happened in the call unwrap_or_else above we quietly double-check if the file is missing or not
             if !file_path.exists() {
-                sha1_local = "";
+                sha1_local.clear();
             } 
 
             if sha1_local != sha1_remote {
