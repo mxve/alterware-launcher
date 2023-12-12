@@ -213,7 +213,7 @@ async fn update_dir(
         let file_name = &file.name.replace(remote_dir_pre.as_str(), "");
         let file_path = dir.join(file_name);
         if file_path.exists() {
-            let sha1_local = hashes
+            let mut sha1_local = hashes
                 .get(file_name)
                 .map(Cow::Borrowed)
                 .unwrap_or_else(|| Cow::Owned(misc::get_file_sha1(&file_path)))
