@@ -219,6 +219,11 @@ async fn update_dir(
                 .unwrap_or_else(|| Cow::Owned(misc::get_file_sha1(&file_path)))
                 .to_string();
 
+            // Because we don't know here what happened in the call unwrap_or_else above we quietly double-check if the file is missing or not
+            if !file_path.exists() {
+                sha1_local = "";
+            } 
+
             if sha1_local != sha1_remote {
                 files_to_download.push(file.clone());
             } else {
