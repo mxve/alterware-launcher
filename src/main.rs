@@ -293,6 +293,58 @@ async fn update(game: &Game<'_>, dir: &Path, bonus_content: bool, force: bool) {
 
     if game.engine == "iw4" {
         iw4x::update(dir);
+
+        let iw4x_dirs = vec!["iw4x", "zone/patch"];
+        for d in &iw4x_dirs {
+            if let Ok(dir_iter) = dir.join(d).read_dir() {
+                'outer: for file in dir_iter.filter_map(|entry| entry.ok()) {
+                    let file_path = file.path();
+
+                    if file_path.is_dir() {
+                        continue;
+                    }
+
+                    let file_path_rel = match file_path.strip_prefix(dir) {
+                        Ok(rel) => rel.to_path_buf(),
+                        Err(_) => continue,
+                    };
+
+                    if iw4x_dirs.iter().any(|prefix| file_path_rel.starts_with(Path::new(prefix))) {
+                        if !cdn_info
+                            .iter()
+                            .any(|cdn_file| cdn_file.name.starts_with("iw4"))
+                        {
+                            continue;
+                        }
+
+                        let should_continue = cdn_info.iter().any(|cdn_file| {
+                            let path_rem = Path::new(&cdn_file.name)
+                                .strip_prefix(Path::new("iw4"))
+                                .unwrap_or_else(|_| Path::new(&cdn_file.name));
+                            path_rem == file_path_rel
+                        });
+
+                        if should_continue {
+                            continue 'outer;
+                        }
+
+                        println!(
+                            "[{}]     {}",
+                            "Removed".bright_red(),
+                            misc::cute_path(&file_path)
+                        );
+
+                        if let Err(_) = fs::remove_file(&file_path) {
+                            println!(
+                                "[{}]      Couldn't delete {}",
+                                "Error".bright_red(),
+                                misc::cute_path(&file_path)
+                            );
+                        }
+                    }
+                }
+            }
+        }
     }
 
     let pb = ProgressBar::new(0);
