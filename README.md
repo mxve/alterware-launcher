@@ -4,6 +4,8 @@
 
 ##### IW4x | IW4-SP | IW5-Mod | IW6-Mod | S1-Mod
 
+![GitHub tag (with filter)](https://img.shields.io/github/v/tag/mxve/alterware-launcher?filter=!v*-pre&style=flat-square&label=Latest%20release&labelColor=F3F8FF&color=E26EE5) ![GitHub (Pre-)Release Date](https://img.shields.io/github/release-date-pre/mxve/alterware-launcher?style=flat-square&label=Release%20date&labelColor=F3F8FF&color=E26EE5) ![GitHub all releases](https://img.shields.io/github/downloads/mxve/alterware-launcher/total?style=flat-square&label=Total%20downloads&labelColor=F3F8FF&color=E26EE5)
+
 ---
 
 #### Installation
@@ -82,13 +84,6 @@ Visit the [AlterWare Forum](https://forum.alterware.dev/) or [Discord](https://d
 ---
 
 ### Note for server owners:
-When the launcher updates itself it needs to be restarted. It will return exit code 201 in this case.
+When the launcher updates itself __on Windows__ it will restart by spawning a new console. If you are automating this process, you should probably use ```--skip-launcher-update``` and download the latest launcher yourself from [here](https://github.com/mxve/alterware-launcher/releases/latest/download/alterware-launcher.exe).
 
-```
-@echo off
-:loop
-start /wait alterware-launcher.exe --update
-if %errorlevel% equ 201 (
-    goto loop
-)
-```
+The linux build does __not__ update itself.
