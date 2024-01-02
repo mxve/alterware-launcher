@@ -358,6 +358,25 @@ async fn update(game: &Game<'_>, dir: &Path, bonus_content: bool, force: bool) {
 
     pb.finish();
 
+    for f in game.delete.iter() {
+        let file_path = dir.join(f);
+        if file_path.exists() {
+            if let Err(_) = fs::remove_file(&file_path) {
+                println!(
+                    "[{}]      Couldn't delete {}",
+                    "Error".bright_red(),
+                    misc::cute_path(&file_path)
+                );
+            } else {
+                println!(
+                    "[{}]     {}",
+                    "Removed".bright_red(),
+                    misc::cute_path(&file_path)
+                );
+            }
+        }
+    }
+
     let mut hash_file_content = String::new();
     for (file, hash) in hashes.iter() {
         hash_file_content.push_str(&format!("{} {}\n", hash, file));

@@ -12,6 +12,7 @@ pub struct Game<'a> {
     pub references: Vec<&'a str>,
     pub app_id: u32,
     pub bonus: Vec<&'a str>,
+    pub delete: Vec<&'a str>,
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
