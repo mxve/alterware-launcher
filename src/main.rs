@@ -22,17 +22,20 @@ use steamlocate::SteamDir;
 #[cfg(windows)]
 fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
     let mut installed_games = Vec::new();
-    let mut steamdir = match SteamDir::locate() {
-        Some(steamdir) => steamdir,
-        None => {
-            println!("{}", "Steam not found!".yellow());
+    let steamdir_result = SteamDir::locate();
+
+    let steamdir = match steamdir_result {
+        Ok(steamdir) => steamdir,
+        Err(error) => {
+            println!("Error locating Steam: {}", error);
             return installed_games;
         }
     };
 
     for game in games {
-        if let Some(app) = steamdir.app(&game.app_id) {
-            installed_games.push((game.app_id, PathBuf::from(&app.path)));
+        if let Ok(Some((app, library))) = steamdir.find_app(game.app_id) {
+            let game_path = library.path().join("steamapps").join("common").join(&app.install_dir);
+            installed_games.push((game.app_id, game_path));
         }
     }
 
