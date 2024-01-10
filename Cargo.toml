@@ -17,7 +17,7 @@ sha1_smol = "1.0.0"
 serde = { version = "1.0.193", features = ["derive"] }
 serde_json = "1.0.109"
 rand = "0.8.5"
-semver = "1.0.20"
+semver = "1.0.21"
 colored = "2.1.0"
 reqwest = { version = "0.11.23", features = ["stream"] }
 futures-util = "0.3.30"
