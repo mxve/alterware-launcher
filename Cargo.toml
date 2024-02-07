@@ -14,7 +14,7 @@ panic = "abort"
 [dependencies]
 http_req = "0.10.2"
 sha1_smol = "1.0.0"
-serde = { version = "1.0.195", features = ["derive"] }
+serde = { version = "1.0.196", features = ["derive"] }
 serde_json = "1.0.113"
 rand = "0.8.5"
 semver = "1.0.21"
