@@ -650,7 +650,7 @@ async fn main() {
                     install_path.as_path(),
                     cfg.download_bonus_content,
                     cfg.force_update,
-                    Some(&game == "iw4x-sp"),
+                    Some(&game != "iw4x-sp"),
                     &master_url,
                 )
                 .await;
