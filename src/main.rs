@@ -300,6 +300,15 @@ async fn update(
     ))
     .unwrap();
 
+    if !game.required_files_exist(dir) {
+        println!(
+            "{}\nVerify game file integrity on Steam or reinstall the game.",
+            "Critical game files missing.".bright_red()
+        );
+        std::io::stdin().read_line(&mut String::new()).unwrap();
+        std::process::exit(0);
+    }
+
     let mut hashes = HashMap::new();
     let hash_file = dir.join(".sha-sums");
     if hash_file.exists() && !force {

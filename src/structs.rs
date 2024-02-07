@@ -1,3 +1,5 @@
+use std::path::Path;
+
 #[derive(serde::Deserialize, serde::Serialize, Clone)]
 pub struct CdnFile {
     pub name: String,
@@ -13,6 +15,20 @@ pub struct Game<'a> {
     pub app_id: u32,
     pub bonus: Vec<&'a str>,
     pub delete: Vec<&'a str>,
+    pub required: Vec<&'a str>,
+}
+
+impl<'a> Game<'a> {
+    pub fn required_files_exist(&self, dir: &Path) -> bool {
+        for required_file in &self.required {
+            let file_path = dir.join(required_file);
+            if !file_path.exists() {
+                println!("Required file {} does not exist", file_path.display());
+                return false;
+            }
+        }
+        true
+    }
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
