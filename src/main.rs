@@ -34,7 +34,11 @@ fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
 
     for game in games {
         if let Ok(Some((app, library))) = steamdir.find_app(game.app_id) {
-            let game_path = library.path().join("steamapps").join("common").join(&app.install_dir);
+            let game_path = library
+                .path()
+                .join("steamapps")
+                .join("common")
+                .join(&app.install_dir);
             installed_games.push((game.app_id, game_path));
         }
     }
@@ -130,12 +134,8 @@ async fn windows_launcher_install(games: &Vec<Game<'_>>) {
             println!("{}: {}", id, path.display());
         }
 
-        println!("Enter the ID of the game you want to install the AlterWare client for, enter 0 for manual selection:");
+        println!("Enter the ID of the game you want to install the AlterWare client for:");
         let input: u32 = misc::stdin().parse().unwrap();
-
-        if input == 0 {
-            return manual_install(games).await;
-        }
 
         for (id, path) in installed_games.iter() {
             if *id == input {
@@ -156,31 +156,33 @@ async fn windows_launcher_install(games: &Vec<Game<'_>>) {
         }
         std::process::exit(0);
     } else {
-        manual_install(games).await;
+        println!(
+            "No installed games found. Make sure to place the launcher in the game directory."
+        );
     }
 }
 
-fn prompt_client_selection(games: &[Game]) -> String {
-    println!(
-        "Couldn't detect any games, please select a client to install in the current directory:"
-    );
-    for (i, g) in games.iter().enumerate() {
-        for c in g.client.iter() {
-            println!("{}: {}", i, c);
-        }
-    }
-    let input: usize = misc::stdin().parse().unwrap();
-    String::from(games[input].client[0])
-}
+// fn prompt_client_selection(games: &[Game]) -> String {
+//     println!(
+//         "Couldn't detect any games, please select a client to install in the current directory:"
+//     );
+//     for (i, g) in games.iter().enumerate() {
+//         for c in g.client.iter() {
+//             println!("{}: {}", i, c);
+//         }
+//     }
+//     let input: usize = misc::stdin().parse().unwrap();
+//     String::from(games[input].client[0])
+// }
 
-async fn manual_install(games: &[Game<'_>]) {
-    let selection = prompt_client_selection(games);
-    let game = games.iter().find(|&g| g.client[0] == selection).unwrap();
-    update(game, &env::current_dir().unwrap(), false, false).await;
-    println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
-    std::io::stdin().read_line(&mut String::new()).unwrap();
-    std::process::exit(0);
-}
+// async fn manual_install(games: &[Game<'_>]) {
+//     let selection = prompt_client_selection(games);
+//     let game = games.iter().find(|&g| g.client[0] == selection).unwrap();
+//     update(game, &env::current_dir().unwrap(), false, false).await;
+//     println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
+//     std::io::stdin().read_line(&mut String::new()).unwrap();
+//     std::process::exit(0);
+// }
 
 fn total_download_size(cdn_info: &Vec<CdnFile>, remote_dir: &str) -> u64 {
     let remote_dir = format!("{}/", remote_dir);
@@ -312,7 +314,10 @@ async fn update(game: &Game<'_>, dir: &Path, bonus_content: bool, force: bool) {
                         Err(_) => continue,
                     };
 
-                    if iw4x_dirs.iter().any(|prefix| file_path_rel.starts_with(Path::new(prefix))) {
+                    if iw4x_dirs
+                        .iter()
+                        .any(|prefix| file_path_rel.starts_with(Path::new(prefix)))
+                    {
                         if !cdn_info
                             .iter()
                             .any(|cdn_file| cdn_file.name.starts_with("iw4"))
@@ -337,7 +342,7 @@ async fn update(game: &Game<'_>, dir: &Path, bonus_content: bool, force: bool) {
                             misc::cute_path(&file_path)
                         );
 
-                        if let Err(_) = fs::remove_file(&file_path) {
+                        if fs::remove_file(&file_path).is_err() {
                             println!(
                                 "[{}]      Couldn't delete {}",
                                 "Error".bright_red(),
@@ -364,7 +369,7 @@ async fn update(game: &Game<'_>, dir: &Path, bonus_content: bool, force: bool) {
     for f in game.delete.iter() {
         let file_path = dir.join(f);
         if file_path.exists() {
-            if let Err(_) = fs::remove_file(&file_path) {
+            if fs::remove_file(&file_path).is_err() {
                 println!(
                     "[{}]      Couldn't delete {}",
                     "Error".bright_red(),
@@ -619,9 +624,6 @@ async fn main() {
 
     #[cfg(windows)]
     windows_launcher_install(&games).await;
-
-    #[cfg(not(windows))]
-    manual_install(&games).await;
 
     println!("{}", "Game not found!".bright_red());
     println!("Place the launcher in the game folder, if that doesn't work specify the client on the command line (ex. alterware-launcher.exe iw4-sp)");
