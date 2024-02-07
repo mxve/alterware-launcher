@@ -103,7 +103,7 @@ fn setup_desktop_links(path: &Path, game: &Game) {
 async fn auto_install(path: &Path, game: &Game<'_>) {
     setup_client_links(game, path);
     setup_desktop_links(path, game);
-    update(game, path, false, false).await;
+    update(game, path, false, false, None).await;
 }
 
 #[cfg(windows)]
@@ -202,6 +202,7 @@ async fn update_dir(
     dir: &Path,
     hashes: &mut HashMap<String, String>,
     pb: &ProgressBar,
+    skip_iw4x_sp: bool
 ) {
     misc::pb_style_download(pb, false);
 
@@ -213,6 +214,9 @@ async fn update_dir(
         if !file.name.starts_with(&remote_dir_pre) || file.name == "iw4/iw4x.dll" {
             continue;
         }
+         if skip_iw4x_sp && file.name == "iw4/iw4x-sp.exe"{
+                continue;
+            }
 
         let sha1_remote = file.hash.to_lowercase();
         let file_name = &file.name.replace(remote_dir_pre.as_str(), "");
@@ -278,7 +282,9 @@ async fn update_dir(
     misc::pb_style_download(pb, false);
 }
 
-async fn update(game: &Game<'_>, dir: &Path, bonus_content: bool, force: bool) {
+async fn update(game: &Game<'_>, dir: &Path, bonus_content: bool, force: bool, skip_iw4x_sp: Option<bool>) {
+    let skip_iw4x_sp = skip_iw4x_sp.unwrap_or(false);
+
     let cdn_info: Vec<CdnFile> = serde_json::from_str(&http::get_body_string(
         format!("{}/files.json", MASTER).as_str(),
     ))
@@ -356,11 +362,11 @@ async fn update(game: &Game<'_>, dir: &Path, bonus_content: bool, force: bool) {
     }
 
     let pb = ProgressBar::new(0);
-    update_dir(&cdn_info, game.engine, dir, &mut hashes, &pb).await;
+    update_dir(&cdn_info, game.engine, dir, &mut hashes, &pb, skip_iw4x_sp).await;
 
     if bonus_content && !game.bonus.is_empty() {
         for bonus in game.bonus.iter() {
-            update_dir(&cdn_info, bonus, dir, &mut hashes, &pb).await;
+            update_dir(&cdn_info, bonus, dir, &mut hashes, &pb, skip_iw4x_sp).await;
         }
     }
 
@@ -612,6 +618,7 @@ async fn main() {
                     install_path.as_path(),
                     cfg.download_bonus_content,
                     cfg.force_update,
+                    Some(&game == "iw4x-sp")
                 )
                 .await;
                 if !cfg.update_only {
