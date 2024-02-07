@@ -25,6 +25,8 @@ pub struct Config {
     pub args: String,
     #[serde(default)]
     pub engine: String,
+    #[serde(default)]
+    pub use_https: bool,
 }
 
 impl Default for Config {
@@ -37,6 +39,7 @@ impl Default for Config {
             force_update: false,
             args: String::default(),
             engine: String::default(),
+            use_https: false,
         }
     }
 }

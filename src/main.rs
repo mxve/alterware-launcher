@@ -100,14 +100,14 @@ fn setup_desktop_links(path: &Path, game: &Game) {
 }
 
 #[cfg(windows)]
-async fn auto_install(path: &Path, game: &Game<'_>) {
+async fn auto_install(path: &Path, game: &Game<'_>, master_url: &String) {
     setup_client_links(game, path);
     setup_desktop_links(path, game);
-    update(game, path, false, false, None).await;
+    update(game, path, false, false, None, master_url).await;
 }
 
 #[cfg(windows)]
-async fn windows_launcher_install(games: &Vec<Game<'_>>) {
+async fn windows_launcher_install(games: &Vec<Game<'_>>, master_url: &String) {
     println!(
         "{}",
         "No game specified/found. Checking for installed Steam games..".yellow()
@@ -121,7 +121,7 @@ async fn windows_launcher_install(games: &Vec<Game<'_>>) {
                 println!("Found game in current directory.");
                 println!("Installing AlterWare client for {}.", id);
                 let game = games.iter().find(|&g| g.app_id == *id).unwrap();
-                auto_install(path, game).await;
+                auto_install(path, game, master_url).await;
                 println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
                 std::io::stdin().read_line(&mut String::new()).unwrap();
                 std::process::exit(0);
@@ -148,7 +148,7 @@ async fn windows_launcher_install(games: &Vec<Game<'_>>) {
                     fs::copy(launcher_path, target_path).unwrap();
                     println!("Launcher copied to {}", path.display());
                 }
-                auto_install(path, game).await;
+                auto_install(path, game, master_url).await;
                 println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
                 std::io::stdin().read_line(&mut String::new()).unwrap();
                 break;
@@ -202,7 +202,8 @@ async fn update_dir(
     dir: &Path,
     hashes: &mut HashMap<String, String>,
     pb: &ProgressBar,
-    skip_iw4x_sp: bool
+    skip_iw4x_sp: bool,
+    master_url: &String,
 ) {
     misc::pb_style_download(pb, false);
 
@@ -214,9 +215,9 @@ async fn update_dir(
         if !file.name.starts_with(&remote_dir_pre) || file.name == "iw4/iw4x.dll" {
             continue;
         }
-         if skip_iw4x_sp && file.name == "iw4/iw4x-sp.exe"{
-                continue;
-            }
+        if skip_iw4x_sp && file.name == "iw4/iw4x-sp.exe" {
+            continue;
+        }
 
         let sha1_remote = file.hash.to_lowercase();
         let file_name = &file.name.replace(remote_dir_pre.as_str(), "");
@@ -271,7 +272,7 @@ async fn update_dir(
         http_async::download_file(
             &client,
             pb,
-            &format!("{}/{}", MASTER, file.name),
+            &format!("{}/{}", master_url, file.name),
             &file_path,
             file.size as u64,
         )
@@ -282,11 +283,18 @@ async fn update_dir(
     misc::pb_style_download(pb, false);
 }
 
-async fn update(game: &Game<'_>, dir: &Path, bonus_content: bool, force: bool, skip_iw4x_sp: Option<bool>) {
+async fn update(
+    game: &Game<'_>,
+    dir: &Path,
+    bonus_content: bool,
+    force: bool,
+    skip_iw4x_sp: Option<bool>,
+    master_url: &String,
+) {
     let skip_iw4x_sp = skip_iw4x_sp.unwrap_or(false);
 
     let cdn_info: Vec<CdnFile> = serde_json::from_str(&http::get_body_string(
-        format!("{}/files.json", MASTER).as_str(),
+        format!("{}/files.json", master_url).as_str(),
     ))
     .unwrap();
 
@@ -362,11 +370,29 @@ async fn update(game: &Game<'_>, dir: &Path, bonus_content: bool, force: bool, s
     }
 
     let pb = ProgressBar::new(0);
-    update_dir(&cdn_info, game.engine, dir, &mut hashes, &pb, skip_iw4x_sp).await;
+    update_dir(
+        &cdn_info,
+        game.engine,
+        dir,
+        &mut hashes,
+        &pb,
+        skip_iw4x_sp,
+        master_url,
+    )
+    .await;
 
     if bonus_content && !game.bonus.is_empty() {
         for bonus in game.bonus.iter() {
-            update_dir(&cdn_info, bonus, dir, &mut hashes, &pb, skip_iw4x_sp).await;
+            update_dir(
+                &cdn_info,
+                bonus,
+                dir,
+                &mut hashes,
+                &pb,
+                skip_iw4x_sp,
+                master_url,
+            )
+            .await;
         }
     }
 
@@ -511,6 +537,12 @@ async fn main() {
 
     let mut cfg = config::load(install_path.join("alterware-launcher.json"));
 
+    let master_url = if cfg.use_https {
+        format!("https://{}", MASTER)
+    } else {
+        format!("http://{}", MASTER)
+    };
+
     if !arg_bool(&args, "--skip-launcher-update") && !cfg.skip_self_update {
         self_update::run(cfg.update_only);
     } else {
@@ -542,7 +574,7 @@ async fn main() {
         cfg.args = String::default();
     }
 
-    let games_json = http::get_body_string(format!("{}/games.json", MASTER).as_str());
+    let games_json = http::get_body_string(format!("{}/games.json", master_url).as_str());
     let games: Vec<Game> = serde_json::from_str(&games_json).unwrap();
 
     let mut game: String = String::new();
@@ -618,7 +650,8 @@ async fn main() {
                     install_path.as_path(),
                     cfg.download_bonus_content,
                     cfg.force_update,
-                    Some(&game == "iw4x-sp")
+                    Some(&game == "iw4x-sp"),
+                    &master_url,
                 )
                 .await;
                 if !cfg.update_only {
@@ -630,7 +663,7 @@ async fn main() {
     }
 
     #[cfg(windows)]
-    windows_launcher_install(&games).await;
+    windows_launcher_install(&games, &master_url).await;
 
     println!("{}", "Game not found!".bright_red());
     println!("Place the launcher in the game folder, if that doesn't work specify the client on the command line (ex. alterware-launcher.exe iw4-sp)");
