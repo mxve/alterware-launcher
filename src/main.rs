@@ -159,6 +159,8 @@ async fn windows_launcher_install(games: &Vec<Game<'_>>, master_url: &String) {
         println!(
             "No installed games found. Make sure to place the launcher in the game directory."
         );
+        std::io::stdin().read_line(&mut String::new()).unwrap();
+        std::process::exit(0);
     }
 }
 
