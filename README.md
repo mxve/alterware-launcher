@@ -8,11 +8,12 @@
 
 ---
 
-#### Installation
+## Installation
 
-1. Download the [latest alterware-launcher.exe](https://github.com/mxve/alterware-launcher/releases/latest/download/alterware-launcher.exe)
-2. Place alterware-launcher.exe in the game directory
-3. Run alterware-launcher.exe, after updating the game will launch automatically
+1. Download the game from [Steam](https://store.steampowered.com/)
+2. Download the [latest alterware-launcher.exe](https://github.com/mxve/alterware-launcher/releases/latest/download/alterware-launcher.exe)
+3. Place alterware-launcher.exe in the game directory
+4. Run alterware-launcher.exe, after updating the game will launch automatically
 
 ---
 
@@ -67,6 +68,9 @@ alterware-launcher.json
 - ```args```
   - See --pass
   - Default: ""
+- ```use_https```
+  - Use HTTPS for downloads
+  - Default: false
 
 ---
 
