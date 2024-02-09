@@ -103,7 +103,7 @@ fn setup_desktop_links(path: &Path, game: &Game) {
 async fn auto_install(path: &Path, game: &Game<'_>, master_url: &String) {
     setup_client_links(game, path);
     setup_desktop_links(path, game);
-    update(game, path, false, false, None, master_url).await;
+    update(game, path, false, false, None, master_url, None).await;
 }
 
 #[cfg(windows)]
@@ -292,15 +292,17 @@ async fn update(
     force: bool,
     skip_iw4x_sp: Option<bool>,
     master_url: &String,
+    ignore_required_files: Option<bool>
 ) {
     let skip_iw4x_sp = skip_iw4x_sp.unwrap_or(false);
+    let ignore_required_files = ignore_required_files.unwrap_or(false);
 
     let cdn_info: Vec<CdnFile> = serde_json::from_str(&http::get_body_string(
         format!("{}/files.json", master_url).as_str(),
     ))
     .unwrap();
 
-    if !game.required_files_exist(dir) {
+    if !ignore_required_files && !game.required_files_exist(dir) {
         println!(
             "{}\nVerify game file integrity on Steam or reinstall the game.",
             "Critical game files missing.".bright_red()
@@ -578,6 +580,11 @@ async fn main() {
         arg_remove(&mut args, "-f");
     }
 
+    let ignore_required_files = arg_bool(&args, "--ignore-required-files");
+    if ignore_required_files {
+        arg_remove(&mut args, "--ignore-required-files");
+    }
+
     if let Some(pass) = arg_value(&args, "--pass") {
         cfg.args = pass;
         arg_remove_value(&mut args, "--pass");
@@ -663,6 +670,7 @@ async fn main() {
                     cfg.force_update,
                     Some(&game != "iw4x-sp"),
                     &master_url,
+                    Some(ignore_required_files),
                 )
                 .await;
                 if !cfg.update_only {

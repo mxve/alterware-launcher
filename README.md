@@ -37,6 +37,8 @@
     - See [client-args.md](client-args.md)
 - ```--version```, ```-v```
   - Print the launcher version
+- ```--ignore-required-files```
+  - Install client even if required files are missing
 
 Example: ```alterware-launcher.exe iw4x --bonus -u --path "C:\Games\IW4x" --pass "-console"```
 
