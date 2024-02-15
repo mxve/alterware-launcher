@@ -511,6 +511,7 @@ async fn main() {
         println!("    --force/-f: Force file hash recheck");
         println!("    --pass <args>: Pass arguments to the game");
         println!("    --skip-launcher-update: Skip launcher self-update");
+        println!("    --ignore-required-files: Skip required files check");
         println!(
             "\nExample:\n    alterware-launcher.exe iw4x --bonus --pass \"-console -nointro\""
         );
