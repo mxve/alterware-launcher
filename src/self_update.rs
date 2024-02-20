@@ -5,9 +5,9 @@ use semver::Version;
 #[cfg(not(windows))]
 use std::{thread, time};
 
-pub fn self_update_available() -> bool {
+pub async fn self_update_available() -> bool {
     let current_version: Version = Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
-    let latest_version = github::latest_version(GH_OWNER, GH_REPO);
+    let latest_version = github::latest_version(GH_OWNER, GH_REPO).await;
 
     current_version < latest_version
 }
@@ -39,10 +39,10 @@ pub fn restart() -> std::io::Error {
 }
 
 #[cfg(windows)]
-pub fn run(update_only: bool) {
+pub async fn run(update_only: bool) {
     use std::{fs, path::PathBuf};
 
-    use crate::http;
+    use crate::http_async;
     use crate::misc;
 
     let working_dir = std::env::current_dir().unwrap();
@@ -62,7 +62,7 @@ pub fn run(update_only: bool) {
         }
     }
 
-    if self_update_available() {
+    if self_update_available().await {
         println!("Performing launcher self-update.");
         println!(
             "If you run into any issues, please download the latest version at {}",
@@ -82,14 +82,16 @@ pub fn run(update_only: bool) {
             "alterware-launcher.exe"
         };
 
-        http::download_file(
+        http_async::download_file(
             &format!(
                 "{}/download/{}",
                 github::latest_release_url(GH_OWNER, GH_REPO),
                 launcher_name
             ),
             &file_path,
-        );
+        )
+        .await
+        .unwrap();
 
         if !file_path.exists() {
             println!("Failed to download launcher update.");

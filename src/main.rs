@@ -1,7 +1,6 @@
 mod config;
 mod github;
 mod global;
-mod http;
 mod http_async;
 mod iw4x;
 mod misc;
@@ -271,7 +270,7 @@ async fn update_dir(
                 fs::create_dir_all(parent).unwrap();
             }
         }
-        http_async::download_file(
+        http_async::download_file_progress(
             &client,
             pb,
             &format!("{}/{}", master_url, file.name),
@@ -292,15 +291,16 @@ async fn update(
     force: bool,
     skip_iw4x_sp: Option<bool>,
     master_url: &String,
-    ignore_required_files: Option<bool>
+    ignore_required_files: Option<bool>,
 ) {
     let skip_iw4x_sp = skip_iw4x_sp.unwrap_or(false);
     let ignore_required_files = ignore_required_files.unwrap_or(false);
 
-    let cdn_info: Vec<CdnFile> = serde_json::from_str(&http::get_body_string(
-        format!("{}/files.json", master_url).as_str(),
-    ))
-    .unwrap();
+    let res = http_async::get_body_string(format!("{}/files.json", master_url).as_str())
+        .await
+        .unwrap();
+    println!("{}", res);
+    let cdn_info: Vec<CdnFile> = serde_json::from_str(&res).unwrap();
 
     if !ignore_required_files && !game.required_files_exist(dir) {
         println!(
@@ -324,7 +324,7 @@ async fn update(
     }
 
     if game.engine == "iw4" {
-        iw4x::update(dir);
+        iw4x::update(dir).await;
 
         let iw4x_dirs = vec!["iw4x", "zone/patch"];
         for d in &iw4x_dirs {
@@ -558,7 +558,7 @@ async fn main() {
     };
 
     if !arg_bool(&args, "--skip-launcher-update") && !cfg.skip_self_update {
-        self_update::run(cfg.update_only);
+        self_update::run(cfg.update_only).await;
     } else {
         arg_remove(&mut args, "--skip-launcher-update");
     }
@@ -593,7 +593,9 @@ async fn main() {
         cfg.args = String::default();
     }
 
-    let games_json = http::get_body_string(format!("{}/games.json", master_url).as_str());
+    let games_json = http_async::get_body_string(format!("{}/games.json", master_url).as_str())
+        .await
+        .unwrap();
     let games: Vec<Game> = serde_json::from_str(&games_json).unwrap();
 
     let mut game: String = String::new();

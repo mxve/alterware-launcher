@@ -10,7 +10,7 @@ use reqwest::Client;
 
 use crate::misc;
 
-pub async fn download_file(
+pub async fn download_file_progress(
     client: &Client,
     pb: &ProgressBar,
     url: &str,
@@ -57,4 +57,66 @@ pub async fn download_file(
 
     pb.set_message(String::default());
     Ok(())
+}
+
+pub async fn download_file(url: &str, path: &PathBuf) -> Result<(), String> {
+    let client = Client::new();
+    match client
+        .get(url)
+        .header(
+            "User-Agent",
+            &format!(
+                "AlterWare Launcher | github.com/{}/{}",
+                crate::global::GH_OWNER,
+                crate::global::GH_REPO
+            ),
+        )
+        .send()
+        .await
+    {
+        Ok(res) => {
+            let body = res.bytes().await.or(Err("Failed to download file"))?;
+            let mut file = File::create(path).or(Err("Failed to create file"))?;
+            file.write_all(&body).or(Err("Failed to write to file"))?;
+            Ok(())
+        }
+        Err(e) => {
+            misc::fatal_error(&format!(
+                "Could not download file from {}, got:\n{}",
+                url, e
+            ));
+            Err("Could not download file".to_string())
+        }
+    }
+}
+
+pub async fn get_body(url: &str) -> Result<Vec<u8>, String> {
+    let client = Client::new();
+    match client
+        .get(url)
+        .header(
+            "User-Agent",
+            &format!(
+                "AlterWare Launcher | github.com/{}/{}",
+                crate::global::GH_OWNER,
+                crate::global::GH_REPO
+            ),
+        )
+        .send()
+        .await
+    {
+        Ok(res) => {
+            let body = res.bytes().await.or(Err("Failed to get body"))?;
+            Ok(body.to_vec())
+        }
+        Err(e) => {
+            misc::fatal_error(&format!("Could not get body from {}, got:\n{}", url, e));
+            Err("Could not get body".to_string())
+        }
+    }
+}
+
+pub async fn get_body_string(url: &str) -> Result<String, String> {
+    let body = get_body(url).await?;
+    Ok(String::from_utf8(body).unwrap())
 }

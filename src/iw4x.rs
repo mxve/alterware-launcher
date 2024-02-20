@@ -1,6 +1,6 @@
 use crate::github;
 use crate::global::*;
-use crate::http;
+use crate::http_async;
 use crate::misc;
 
 use colored::*;
@@ -14,12 +14,12 @@ pub fn local_revision(dir: &Path) -> u16 {
     }
 }
 
-pub fn remote_revision() -> u16 {
-    misc::rev_to_int(&github::latest_tag(GH_IW4X_OWNER, GH_IW4X_REPO))
+pub async fn remote_revision() -> u16 {
+    misc::rev_to_int(&github::latest_tag(GH_IW4X_OWNER, GH_IW4X_REPO).await)
 }
 
-pub fn update(dir: &Path) {
-    let remote = remote_revision();
+pub async fn update(dir: &Path) {
+    let remote = remote_revision().await;
     let local = local_revision(dir);
 
     if remote <= local && dir.join("iw4x.dll").exists() {
@@ -39,12 +39,14 @@ pub fn update(dir: &Path) {
         "Downloading".bright_yellow(),
         misc::cute_path(&dir.join("iw4x.dll"))
     );
-    http::download_file(
+    http_async::download_file(
         &format!(
             "{}/download/iw4x.dll",
             github::latest_release_url(GH_IW4X_OWNER, GH_IW4X_REPO)
         ),
         &dir.join("iw4x.dll"),
-    );
+    )
+    .await
+    .unwrap();
     fs::write(dir.join(".iw4xrevision"), format!("r{}", remote)).unwrap();
 }
