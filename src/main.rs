@@ -595,7 +595,12 @@ async fn main() {
     let games_json = http_async::get_body_string(format!("{}/games.json", master_url).as_str())
         .await
         .unwrap();
-    let games: Vec<Game> = serde_json::from_str(&games_json).unwrap();
+    let games: Vec<Game> = serde_json::from_str(&games_json).unwrap_or_else(|error| {
+        println!("Error parsing games.json: {:#?}", error);
+        fs::write("alterware-launcher-error.txt", &games_json).unwrap();
+        misc::stdin();
+        std::process::exit(1);
+    });
 
     let mut game: String = String::new();
     if args.len() > 1 {
