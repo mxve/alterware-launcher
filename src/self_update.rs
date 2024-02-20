@@ -13,15 +13,15 @@ pub async fn self_update_available() -> bool {
 }
 
 #[cfg(not(windows))]
-pub fn run(_update_only: bool) {
-    if self_update_available() {
+pub async fn run(_update_only: bool) {
+    if self_update_available().await {
         println!("A new version of the AlterWare launcher is available.");
         println!(
             "Download it at {}",
             github::latest_release_url(GH_OWNER, GH_REPO)
         );
         println!("Launching in 10 seconds..");
-        thread::sleep(time::Duration::from_secs(10));
+        tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
     }
 }
 
