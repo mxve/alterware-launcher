@@ -2,8 +2,6 @@ use crate::github;
 use crate::global::*;
 
 use semver::Version;
-#[cfg(not(windows))]
-use std::{thread, time};
 
 pub async fn self_update_available() -> bool {
     let current_version: Version = Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
