@@ -12,7 +12,6 @@ panic = "abort"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-http_req = "0.10.2"
 sha1_smol = "1.0.0"
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json = "1.0.113"
