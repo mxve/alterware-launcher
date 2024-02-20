@@ -106,6 +106,11 @@ pub async fn get_body(url: &str) -> Result<Vec<u8>, String> {
         .await
     {
         Ok(res) => {
+            println!(
+                "[DEBUG] {} {}",
+                res.status().to_string().bright_yellow(),
+                url.bright_yellow()
+            );
             let body = res.bytes().await.or(Err("Failed to get body"))?;
             Ok(body.to_vec())
         }
