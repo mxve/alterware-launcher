@@ -299,7 +299,6 @@ async fn update(
     let res = http_async::get_body_string(format!("{}/files.json", master_url).as_str())
         .await
         .unwrap();
-    println!("{}", res);
     let cdn_info: Vec<CdnFile> = serde_json::from_str(&res).unwrap();
 
     if !ignore_required_files && !game.required_files_exist(dir) {
