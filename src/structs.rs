@@ -55,7 +55,7 @@ impl Default for Config {
             force_update: false,
             args: String::default(),
             engine: String::default(),
-            use_https: false,
+            use_https: true,
         }
     }
 }
