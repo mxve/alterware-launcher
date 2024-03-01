@@ -412,8 +412,22 @@ async fn update(
 
     for f in game.delete.iter() {
         let file_path = dir.join(f);
-        if file_path.exists() {
+        if file_path.is_file() {
             if fs::remove_file(&file_path).is_err() {
+                println!(
+                    "[{}]      Couldn't delete {}",
+                    "Error".bright_red(),
+                    misc::cute_path(&file_path)
+                );
+            } else {
+                println!(
+                    "[{}]     {}",
+                    "Removed".bright_red(),
+                    misc::cute_path(&file_path)
+                );
+            }
+        } else if file_path.is_dir() {
+            if fs::remove_dir_all(&file_path).is_err() {
                 println!(
                     "[{}]      Couldn't delete {}",
                     "Error".bright_red(),
