@@ -487,9 +487,12 @@ fn setup_env() {
 }
 
 fn arg_value(args: &[String], arg: &str) -> Option<String> {
-    args.iter()
-        .position(|r| r == arg)
-        .map(|e| args[e + 1].clone())
+    if let Some(e) = args.iter().position(|r| r == arg) {
+        if e + 1 < args.len() {
+            return Some(args[e + 1].clone());
+        }
+    }
+    None
 }
 
 fn arg_bool(args: &[String], arg: &str) -> bool {
