@@ -34,7 +34,7 @@ pub async fn download_file_progress(
     let total_size = res.content_length().unwrap_or(size);
     pb.set_length(total_size);
     let msg = format!(
-        "{} {} ({})",
+        "[{}] {} ({})",
         "Downloading".bright_yellow(),
         misc::cute_path(path),
         misc::human_readable_bytes(total_size)

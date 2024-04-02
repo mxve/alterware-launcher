@@ -525,10 +525,8 @@ async fn main() {
     let log_file = env::current_exe()
         .unwrap_or(PathBuf::from("alterware-launcher"))
         .with_extension("log");
-    if log_file.exists() {
-        if fs::remove_file(&log_file).is_err() {
-            println!("Couldn't clear log file, make sure target directory is writable.");
-        }
+    if log_file.exists() && fs::remove_file(&log_file).is_err() {
+        println!("Couldn't clear log file, make sure target directory is writable.");
     }
     let logger_config = LogConfigBuilder::builder()
         .path(log_file.to_str().unwrap())
