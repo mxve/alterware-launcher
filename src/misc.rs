@@ -26,7 +26,7 @@ pub fn rev_to_int(rev: &str) -> u16 {
 }
 
 pub fn fatal_error(error: &str) {
-    println!("\n\n{}:\n{}", "Error".bright_red(), error);
+    crate::println_error!("{}: {}", "Error".bright_red(), error);
     stdin();
     std::process::exit(1);
 }
@@ -55,4 +55,20 @@ pub fn pb_style_download(pb: &ProgressBar, state: bool) {
 
 pub fn cute_path(path: &Path) -> String {
     path.to_str().unwrap().replace('\\', "/")
+}
+
+#[macro_export]
+macro_rules! println_info {
+    ($($arg:tt)*) => {{
+        println!($($arg)*);
+        info!($($arg)*);
+    }}
+}
+
+#[macro_export]
+macro_rules! println_error {
+    ($($arg:tt)*) => {{
+        eprintln!($($arg)*);
+        error!($($arg)*);
+    }}
 }

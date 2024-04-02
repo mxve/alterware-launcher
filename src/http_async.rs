@@ -33,12 +33,14 @@ pub async fn download_file_progress(
     // Fix for CF shenanigans
     let total_size = res.content_length().unwrap_or(size);
     pb.set_length(total_size);
-    pb.println(format!(
-        "[{}] {} ({})",
+    let msg = format!(
+        "{} {} ({})",
         "Downloading".bright_yellow(),
         misc::cute_path(path),
         misc::human_readable_bytes(total_size)
-    ));
+    );
+    pb.println(&msg);
+    info!("{}", msg);
     pb.set_message(path.file_name().unwrap().to_str().unwrap().to_string());
 
     let mut file =
@@ -81,10 +83,7 @@ pub async fn download_file(url: &str, path: &PathBuf) -> Result<(), String> {
             Ok(())
         }
         Err(e) => {
-            misc::fatal_error(&format!(
-                "Could not download file from {}, got:\n{}",
-                url, e
-            ));
+            misc::fatal_error(&e.to_string());
             Err("Could not download file".to_string())
         }
     }
@@ -106,16 +105,12 @@ pub async fn get_body(url: &str) -> Result<Vec<u8>, String> {
         .await
     {
         Ok(res) => {
-            println!(
-                "[DEBUG] {} {}",
-                res.status().to_string().bright_yellow(),
-                url.bright_yellow()
-            );
+            debug!("{} {}", res.status().to_string(), url);
             let body = res.bytes().await.or(Err("Failed to get body"))?;
             Ok(body.to_vec())
         }
         Err(e) => {
-            misc::fatal_error(&format!("Could not get body from {}, got:\n{}", url, e));
+            misc::fatal_error(&e.to_string());
             Err("Could not get body".to_string())
         }
     }

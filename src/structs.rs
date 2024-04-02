@@ -23,7 +23,7 @@ impl<'a> Game<'a> {
         for required_file in &self.required {
             let file_path = dir.join(required_file);
             if !file_path.exists() {
-                println!("Required file {} does not exist", file_path.display());
+                crate::println_error!("Required file {} does not exist", file_path.display());
                 return false;
             }
         }

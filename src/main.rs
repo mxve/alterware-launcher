@@ -10,10 +10,14 @@ mod structs;
 use global::*;
 use structs::*;
 
+#[macro_use]
+extern crate simple_log;
+
 use colored::*;
 use indicatif::ProgressBar;
 #[cfg(windows)]
 use mslnk::ShellLink;
+use simple_log::LogConfigBuilder;
 use std::{borrow::Cow, collections::HashMap, env, fs, path::Path, path::PathBuf};
 #[cfg(windows)]
 use steamlocate::SteamDir;
@@ -26,7 +30,7 @@ fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
     let steamdir = match steamdir_result {
         Ok(steamdir) => steamdir,
         Err(error) => {
-            println!("Error locating Steam: {}", error);
+            crate::println_error!("Error locating Steam: {}", error);
             return installed_games;
         }
     };
@@ -51,17 +55,17 @@ fn create_shortcut(path: &Path, target: &Path, icon: String, args: String) {
         sl.set_arguments(Some(args));
         sl.set_icon_location(Some(icon));
         sl.create_lnk(path).unwrap_or_else(|error| {
-            println!("Error creating shortcut.\n{:#?}", error);
+            crate::println_error!("Error creating shortcut.\n{:#?}", error);
         });
     } else {
-        println!("Error creating shortcut.");
+        crate::println_error!("Error creating shortcut.");
     }
 }
 
 #[cfg(windows)]
 fn setup_client_links(game: &Game, game_dir: &Path) {
     if game.client.len() > 1 {
-        println!("Multiple clients installed, use the shortcuts (launch-<client>.lnk in the game directory or on the desktop) to launch a specific client.");
+        crate::println_error!("Multiple clients installed, use the shortcuts (launch-<client>.lnk in the game directory or on the desktop) to launch a specific client.");
     }
 
     for c in game.client.iter() {
@@ -107,7 +111,7 @@ async fn auto_install(path: &Path, game: &Game<'_>, master_url: &String) {
 
 #[cfg(windows)]
 async fn windows_launcher_install(games: &Vec<Game<'_>>, master_url: &String) {
-    println!(
+    crate::println_info!(
         "{}",
         "No game specified/found. Checking for installed Steam games..".yellow()
     );
@@ -117,11 +121,11 @@ async fn windows_launcher_install(games: &Vec<Game<'_>>, master_url: &String) {
         let current_dir = env::current_dir().unwrap();
         for (id, path) in installed_games.iter() {
             if current_dir.starts_with(path) {
-                println!("Found game in current directory.");
-                println!("Installing AlterWare client for {}.", id);
+                crate::println_info!("Found game in current directory.");
+                crate::println_info!("Installing AlterWare client for {}.", id);
                 let game = games.iter().find(|&g| g.app_id == *id).unwrap();
                 auto_install(path, game, master_url).await;
-                println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
+                crate::println_info!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
                 std::io::stdin().read_line(&mut String::new()).unwrap();
                 std::process::exit(0);
             }
@@ -145,10 +149,10 @@ async fn windows_launcher_install(games: &Vec<Game<'_>>, master_url: &String) {
 
                 if launcher_path != target_path {
                     fs::copy(launcher_path, target_path).unwrap();
-                    println!("Launcher copied to {}", path.display());
+                    crate::println_info!("Launcher copied to {}", path.display());
                 }
                 auto_install(path, game, master_url).await;
-                println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
+                crate::println_info!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
                 std::io::stdin().read_line(&mut String::new()).unwrap();
                 break;
             }
@@ -233,11 +237,13 @@ async fn update_dir(
             if sha1_local != sha1_remote {
                 files_to_download.push(file.clone());
             } else {
-                pb.println(format!(
+                let msg = format!(
                     "[{}]     {}",
                     "Checked".bright_blue(),
                     misc::cute_path(&file_path)
-                ));
+                );
+                pb.println(&msg);
+                info!("{}", msg);
                 hashes.insert(file_name.to_owned(), file.hash.to_lowercase());
             }
         } else {
@@ -246,19 +252,23 @@ async fn update_dir(
     }
 
     if files_to_download.is_empty() {
-        pb.println(format!(
+        let msg = format!(
             "[{}]        No files to download for {}",
             "Info".bright_magenta(),
             remote_dir
-        ));
+        );
+        pb.println(&msg);
+        info!("{}", msg);
         return;
     }
-    pb.println(format!(
+    let msg = format!(
         "[{}]        Downloading outdated or missing files for {}, {}",
         "Info".bright_magenta(),
         remote_dir,
         misc::human_readable_bytes(total_download_size(&files_to_download, remote_dir))
-    ));
+    );
+    pb.println(&msg);
+    info!("{}", msg);
 
     misc::pb_style_download(pb, true);
     let client = reqwest::Client::new();
@@ -362,14 +372,14 @@ async fn update(
                             continue 'outer;
                         }
 
-                        println!(
+                        crate::println_info!(
                             "[{}]     {}",
                             "Removed".bright_red(),
                             misc::cute_path(&file_path)
                         );
 
                         if fs::remove_file(&file_path).is_err() {
-                            println!(
+                            crate::println_error!(
                                 "[{}]      Couldn't delete {}",
                                 "Error".bright_red(),
                                 misc::cute_path(&file_path)
@@ -452,7 +462,7 @@ async fn update(
 
 fn launch(file_path: &PathBuf, args: &str) {
     println!("\n\nJoin the AlterWare Discord server:\nhttps://discord.gg/2ETE8engZM\n\n");
-    println!("Launching {} {}", file_path.display(), args);
+    crate::println_info!("Launching {} {}", file_path.display(), args);
     std::process::Command::new(file_path)
         .args(args.trim().split(' '))
         .current_dir(file_path.parent().unwrap())
@@ -465,7 +475,7 @@ fn launch(file_path: &PathBuf, args: &str) {
 #[cfg(windows)]
 fn setup_env() {
     colored::control::set_virtual_terminal(true).unwrap_or_else(|error| {
-        println!("{:#?}", error);
+        crate::println_error!("{:#?}", error);
         colored::control::SHOULD_COLORIZE.set_override(false);
     });
 
@@ -475,9 +485,9 @@ fn setup_env() {
                 if let Ok(current_exe) = env::current_exe() {
                     if let Some(parent) = current_exe.parent() {
                         if let Err(error) = env::set_current_dir(parent) {
-                            eprintln!("{:#?}", error);
+                            crate::println_error!("{:#?}", error);
                         } else {
-                            println!("Running from the system directory. Changed working directory to the executable location.");
+                            crate::println_info!("Running from the system directory. Changed working directory to the executable location.");
                         }
                     }
                 }
@@ -512,8 +522,25 @@ fn arg_remove_value(args: &mut Vec<String>, arg: &str) {
 
 #[tokio::main]
 async fn main() {
+    let log_file = env::current_exe()
+        .unwrap_or(PathBuf::from("alterware-launcher"))
+        .with_extension("log");
+    if log_file.exists() {
+        if fs::remove_file(&log_file).is_err() {
+            println!("Couldn't clear log file, make sure target directory is writable.");
+        }
+    }
+    let logger_config = LogConfigBuilder::builder()
+        .path(log_file.to_str().unwrap())
+        .time_format("%Y-%m-%d %H:%M:%S.%f")
+        .level("debug")
+        .output_file()
+        .build();
+    let _ = simple_log::new(logger_config);
+
     #[cfg(windows)]
     setup_env();
+
     let mut args: Vec<String> = env::args().collect();
 
     if arg_bool(&args, "--help") {
@@ -613,8 +640,7 @@ async fn main() {
         .await
         .unwrap();
     let games: Vec<Game> = serde_json::from_str(&games_json).unwrap_or_else(|error| {
-        println!("Error parsing games.json: {:#?}", error);
-        fs::write("alterware-launcher-error.txt", &games_json).unwrap();
+        crate::println_error!("Error parsing games.json: {:#?}", error);
         misc::stdin();
         std::process::exit(1);
     });
@@ -708,7 +734,7 @@ async fn main() {
     #[cfg(windows)]
     windows_launcher_install(&games, &master_url).await;
 
-    println!("{}", "Game not found!".bright_red());
+    crate::println_error!("{}", "Game not found!".bright_red());
     println!("Place the launcher in the game folder, if that doesn't work specify the client on the command line (ex. alterware-launcher.exe iw4-sp)");
     println!("Press enter to exit...");
     std::io::stdin().read_line(&mut String::new()).unwrap();

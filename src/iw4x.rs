@@ -23,18 +23,18 @@ pub async fn update(dir: &Path) {
     let local = local_revision(dir);
 
     if remote <= local && dir.join("iw4x.dll").exists() {
-        println!(
+        crate::println_info!(
             "[{}]        No files to download for IW4x",
             "Info".bright_magenta(),
         );
         return;
     }
 
-    println!(
+    crate::println_info!(
         "[{}]        Downloading outdated or missing files for IW4x",
         "Info".bright_magenta()
     );
-    println!(
+    crate::println_info!(
         "[{}] {}",
         "Downloading".bright_yellow(),
         misc::cute_path(&dir.join("iw4x.dll"))

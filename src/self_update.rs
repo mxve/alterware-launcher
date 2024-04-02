@@ -13,8 +13,8 @@ pub async fn self_update_available() -> bool {
 #[cfg(not(windows))]
 pub async fn run(_update_only: bool) {
     if self_update_available().await {
-        println!("A new version of the AlterWare launcher is available.");
-        println!(
+        crate::println_info!("A new version of the AlterWare launcher is available.");
+        crate::println_info!(
             "Download it at {}",
             github::latest_release_url(GH_OWNER, GH_REPO)
         );
@@ -55,13 +55,13 @@ pub async fn run(update_only: bool) {
                 || file_name.contains(".__selfdelete__.exe"))
         {
             fs::remove_file(file.path()).unwrap_or_else(|_| {
-                println!("Failed to remove old launcher file.");
+                crate::println_error!("Failed to remove old launcher file.");
             });
         }
     }
 
     if self_update_available().await {
-        println!("Performing launcher self-update.");
+        crate::println_info!("Performing launcher self-update.");
         println!(
             "If you run into any issues, please download the latest version at {}",
             github::latest_release_url(GH_OWNER, GH_REPO)
@@ -92,7 +92,7 @@ pub async fn run(update_only: bool) {
         .unwrap();
 
         if !file_path.exists() {
-            println!("Failed to download launcher update.");
+            crate::println_error!("Failed to download launcher update.");
             return;
         }
 
@@ -102,7 +102,7 @@ pub async fn run(update_only: bool) {
         // restarting spawns a new console, automation should manually restart on exit code 201
         if !update_only {
             let restart_error = restart().to_string();
-            println!("Failed to restart launcher: {}", restart_error);
+            crate::println_error!("Failed to restart launcher: {}", restart_error);
             println!("Please restart the launcher manually.");
             misc::stdin();
         }

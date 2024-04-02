@@ -23,7 +23,7 @@ pub fn save(config_path: PathBuf, config: Config) {
                 fs::create_dir_all(config_path.parent().unwrap()).unwrap();
                 save(config_path, config);
             }
-            _ => println!("Could not save config file, got:\n{}\n", e),
+            _ => crate::println_error!("Error while saving config {}", e.to_string()),
         },
     }
 }
