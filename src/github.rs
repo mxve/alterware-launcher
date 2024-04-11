@@ -10,8 +10,16 @@ pub async fn latest_tag(owner: &str, repo: &str) -> String {
     )
     .await
     .unwrap();
+
     let github_json: serde_json::Value = serde_json::from_str(&github_body).unwrap();
-    github_json["tag_name"].to_string().replace('"', "")
+
+    if let Some(tag_name) = github_json.get("tag_name") {
+        if let Some(tag_name_str) = tag_name.as_str() {
+            return tag_name_str.to_string().replace('"', "");
+        }
+    }
+
+    "0.0.0".to_string()
 }
 
 pub async fn latest_version(owner: &str, repo: &str) -> Version {
