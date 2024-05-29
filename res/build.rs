@@ -1,16 +1,7 @@
-#[cfg(windows)]
-extern crate winres;
-
-#[cfg(windows)]
 fn main() {
-    let mut res = winres::WindowsResource::new();
-    res.set_icon("res/icon.ico").set_language(0x0409);
-
-    if let Err(e) = res.compile() {
-        eprintln!("{}", e);
-        std::process::exit(1);
+    if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "windows" {
+        let mut res = winresource::WindowsResource::new();
+        res.set_icon("res/icon.ico").set_language(0x0409);
+        res.compile().unwrap();
     }
 }
-
-#[cfg(unix)]
-fn main() {}
