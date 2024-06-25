@@ -18,7 +18,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libssl-dev
+          sudo apt-get install -y pkg-configpkg-config libssl-dev
 
       - name: Compile and release
         id: compile
