@@ -10,9 +10,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [x86_64-pc-windows-gnu, x86_64-unknown-linux-musl, x86_64-apple-darwin]
+        target: [x86_64-pc-windows-gnu, x86_64-unknown-linux-musl]
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out files
+        uses: actions/checkout@main
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev
+
       - name: Compile and release
         id: compile
         uses: rust-build/rust-build.action@v1.4.5
