@@ -57,6 +57,19 @@ pub fn cute_path(path: &Path) -> String {
     path.to_str().unwrap().replace('\\', "/")
 }
 
+#[cfg(unix)]
+pub fn is_program_in_path(program: &str) -> bool {
+    if let Ok(path) = std::env::var("PATH") {
+        for p in path.split(':') {
+            let p_str = format!("{}/{}", p, program);
+            if fs::metadata(p_str).is_ok() {
+                return true;
+            }
+        }
+    }
+    false
+}
+
 #[macro_export]
 macro_rules! println_info {
     ($($arg:tt)*) => {{

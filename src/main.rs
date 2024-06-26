@@ -467,6 +467,7 @@ async fn update(
     fs::write(dir.join(".sha-sums"), hash_file_content).unwrap();
 }
 
+#[cfg(windows)]
 fn launch(file_path: &PathBuf, args: &str) {
     println!("\n\nJoin the AlterWare Discord server:\nhttps://discord.gg/2ETE8engZM\n\n");
     crate::println_info!("Launching {} {}", file_path.display(), args);
@@ -477,6 +478,35 @@ fn launch(file_path: &PathBuf, args: &str) {
         .expect("Failed to launch the game")
         .wait()
         .expect("Failed to wait for the game process to finish");
+
+    crate::println_error!("Game exited with status: {}", exit_status);
+    if !exit_status.success() {
+        misc::stdin();
+    }
+}
+
+#[cfg(unix)]
+fn launch(file_path: &PathBuf, args: &str) {
+    println!("\n\nJoin the AlterWare Discord server:\nhttps://discord.gg/2ETE8engZM\n\n");
+    crate::println_info!("Launching {} {}", file_path.display(), args);
+    let exit_status = if misc::is_program_in_path("wine") {
+        println!("Found wine, launching game using wine.\nIf you run into issues or want to launch a different way, run {} manually.", file_path.display());
+        std::process::Command::new("wine")
+            .args([file_path.to_str().unwrap(), args.trim()])
+            .current_dir(file_path.parent().unwrap())
+            .spawn()
+            .expect("Failed to launch the game")
+            .wait()
+            .expect("Failed to wait for the game process to finish")
+    } else {
+        std::process::Command::new(file_path)
+            .args(args.trim().split(' '))
+            .current_dir(file_path.parent().unwrap())
+            .spawn()
+            .expect("Failed to launch the game")
+            .wait()
+            .expect("Failed to wait for the game process to finish")
+    };
 
     crate::println_error!("Game exited with status: {}", exit_status);
     if !exit_status.success() {
