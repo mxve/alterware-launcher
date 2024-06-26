@@ -290,6 +290,13 @@ async fn update_dir(
         .await
         .unwrap();
         hashes.insert(file_name.to_owned(), file.hash.to_lowercase());
+        #[cfg(unix)]
+        if file_name.ends_with(".exe") {
+            let perms = std::os::unix::fs::PermissionsExt::from_mode(0o755);
+            fs::set_permissions(&file_path, perms).unwrap_or_else(|error| {
+                crate::println_error!("Error setting permissions for {}: {:#?}", file_name, error);
+            })
+        }
     }
     misc::pb_style_download(pb, false);
 }
