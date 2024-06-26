@@ -470,13 +470,18 @@ async fn update(
 fn launch(file_path: &PathBuf, args: &str) {
     println!("\n\nJoin the AlterWare Discord server:\nhttps://discord.gg/2ETE8engZM\n\n");
     crate::println_info!("Launching {} {}", file_path.display(), args);
-    std::process::Command::new(file_path)
+    let exit_status = std::process::Command::new(file_path)
         .args(args.trim().split(' '))
         .current_dir(file_path.parent().unwrap())
         .spawn()
         .expect("Failed to launch the game")
         .wait()
         .expect("Failed to wait for the game process to finish");
+
+    crate::println_error!("Game exited with status: {}", exit_status);
+    if !exit_status.success() {
+        misc::stdin();
+    }
 }
 
 #[cfg(windows)]
