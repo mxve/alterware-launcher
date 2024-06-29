@@ -37,5 +37,5 @@ winresource = "0.1.17"
 
 [package.metadata.winresource]
 OriginalFilename = "alterware-launcher.exe"
-FileDescription = "github.com/mxve/alterware-launcher"
-ProductName = "AlterWare Launcher"
+FileDescription = "AlterWare Launcher"
+ProductName = "github.com/mxve/alterware-launcher"
