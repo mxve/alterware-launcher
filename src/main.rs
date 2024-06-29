@@ -289,7 +289,8 @@ async fn update_dir(
         )
         .await
         .unwrap();
-        hashes.insert(file_name.to_owned(), file.hash.to_lowercase());
+        let hash = misc::get_file_sha1(&file_path);
+        hashes.insert(file_name.to_owned(), hash.to_lowercase());
         #[cfg(unix)]
         if file_name.ends_with(".exe") {
             let perms = std::os::unix::fs::PermissionsExt::from_mode(0o755);
