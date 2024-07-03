@@ -738,6 +738,15 @@ async fn main() {
                     }
                 }
 
+                if cfg.engine == "iw4" && !cfg.args.contains("+set logfile 1") {
+                    cfg.args = format!("{} +set logfile 1", cfg.args);
+                    config::save_value_s(
+                        install_path.join("alterware-launcher.json"),
+                        "args",
+                        cfg.args.clone(),
+                    );
+                }
+
                 if cfg.ask_bonus_content && !g.bonus.is_empty() {
                     println!("Download bonus content? (Y/n)");
                     let input = misc::stdin().to_ascii_lowercase();
