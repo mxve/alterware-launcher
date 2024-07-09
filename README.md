@@ -83,6 +83,7 @@ Visit the [AlterWare Forum](https://forum.alterware.dev/) or [Discord](https://d
 #### Building from Source
 
 - [Install Rust](https://rustup.rs/)
+- [Linux/unix] Make sure perl is installed<sup>1</sup>
 - Clone the repository
 - Run ```cargo build --release```
 - The executable will be located in ```target/release```
@@ -93,3 +94,7 @@ Visit the [AlterWare Forum](https://forum.alterware.dev/) or [Discord](https://d
 When the launcher updates itself __on Windows__ it will restart by spawning a new console. If you are automating this process, you should probably use ```--skip-launcher-update``` and download the latest launcher yourself from [here](https://github.com/mxve/alterware-launcher/releases/latest/download/alterware-launcher.exe).
 
 The linux build does __not__ update itself.
+
+---
+
+<sup>1</sup> [Required for OpenSSL](https://docs.rs/openssl/latest/openssl/#vendored)
