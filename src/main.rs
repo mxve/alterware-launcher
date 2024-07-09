@@ -280,7 +280,7 @@ async fn update_dir(
                 fs::create_dir_all(parent).unwrap();
             }
         }
-        http_async::download_file_progress(
+        if let Err(err) = http_async::download_file_progress(
             &client,
             pb,
             &format!("{}/{}", master_url, file.name),
@@ -288,7 +288,9 @@ async fn update_dir(
             file.size as u64,
         )
         .await
-        .unwrap();
+        {
+            panic!("{err}");
+        };
         let hash = misc::get_file_sha1(&file_path);
         hashes.insert(file_name.to_owned(), hash.to_lowercase());
         #[cfg(unix)]
