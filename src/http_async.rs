@@ -49,9 +49,13 @@ pub async fn download_file_progress(
     let mut stream = res.bytes_stream();
 
     while let Some(item) = stream.next().await {
-        let chunk = item.or(Err("Error while downloading file"))?;
-        file.write_all(&chunk)
-            .or(Err("Error while writing to file"))?;
+        let chunk = match item {
+            Ok(v) => v,
+            Err(e) => return Err(format!("Error while downloading file: {e}")),
+        };
+        if let Err(e) = file.write_all(&chunk) {
+            Err(format!("Error while writing to file: {e}"))?
+        }
         let new = min(downloaded + (chunk.len() as u64), total_size);
         downloaded = new;
         pb.set_position(new);
