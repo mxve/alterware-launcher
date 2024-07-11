@@ -51,7 +51,7 @@ pub async fn download_file_progress(
     while let Some(item) = stream.next().await {
         let chunk = match item {
             Ok(v) => v,
-            Err(e) => return Err(format!("Error while downloading file: {e}"))
+            Err(e) => return Err(format!("Error while downloading file: {e}")),
         };
         if let Err(e) = file.write_all(&chunk) {
             Err(format!("Error while writing to file: {e}"))?
