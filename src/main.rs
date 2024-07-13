@@ -668,6 +668,9 @@ async fn main() {
     if arg_bool(&args, "--redist") {
         arg_remove(&mut args, "--redist");
         misc::install_dependencies(&install_path).await;
+        println_info!("Redistributables installation finished. Press enter to exit...");
+        misc::stdin();
+        std::process::exit(0);
     }
 
     let games_json = http_async::get_body_string(format!("{}/games.json", master_url).as_str())
