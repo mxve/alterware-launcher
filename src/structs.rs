@@ -43,6 +43,8 @@ pub struct Config {
     pub engine: String,
     #[serde(default)]
     pub use_https: bool,
+    #[serde(default)]
+    pub skip_redist: bool,
 }
 
 impl Default for Config {
@@ -56,6 +58,7 @@ impl Default for Config {
             args: String::default(),
             engine: String::default(),
             use_https: true,
+            skip_redist: false,
         }
     }
 }

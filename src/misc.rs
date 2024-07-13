@@ -85,3 +85,71 @@ macro_rules! println_error {
         error!($($arg)*);
     }}
 }
+
+#[cfg(windows)]
+fn install_dependency(path: &Path, args: &[&str]) {
+    if path.exists() {
+        match runas::Command::new(path).args(args).status() {
+            Ok(status) => {
+                if !status.success() && !matches!(status.code(), Some(1638) | Some(3010)) {
+                    println_error!("Error installing dependency {}, {}", path.display(), status);
+                } else {
+                    info!("{} installed successfully", path.display());
+                }
+            }
+            Err(e) => {
+                if let Some(740) = e.raw_os_error() {
+                    println_error!(
+                        "Error: Process requires elevation. Please run the launcher as administrator or install {} manually",
+                        path.display()
+                    );
+                } else {
+                    println_error!("Error running file {}: {}", path.display(), e);
+                }
+            }
+        }
+    } else {
+        println_error!("Installer not found: {}", path.display());
+    }
+}
+
+#[cfg(windows)]
+async fn download_and_install_dependency(url: &str, path: &Path, args: &[&str]) {
+    if !path.exists() {
+        info!("Downloading {} from {}", path.display(), url);
+        if let Some(parent) = path.parent() {
+            match fs::create_dir_all(parent) {
+                Ok(_) => (),
+                Err(e) => {
+                    println_error!("Error creating directory {}: {}", parent.display(), e);
+                    return;
+                }
+            }
+        }
+        match crate::http_async::download_file(url, &PathBuf::from(path)).await {
+            Ok(_) => info!("Downloaded {}", path.display()),
+            Err(e) => println_error!("Error downloading {}: {}", path.display(), e),
+        }
+    }
+    install_dependency(path, args);
+}
+
+#[cfg(windows)]
+pub async fn install_dependencies(install_path: &Path) {
+    println!("If you run into issues during dependency installation, open alterware-launcher.json and set \"skip_redist\" to true");
+
+    let redist_dir = install_path.join("redist\\alterware");
+    let redists = [
+        ("VC++ 2005", "https://download.microsoft.com/download/8/B/4/8B42259F-5D70-43F4-AC2E-4B208FD8D66A/vcredist_x86.EXE", "vcredist_2005_x86.exe", &["/Q"] as &[&str]),
+        ("VC++ 2008", "https://download.microsoft.com/download/5/D/8/5D8C65CB-C849-4025-8E95-C3966CAFD8AE/vcredist_x86.exe", "vcredist_2008_x86.exe", &["/Q"] as &[&str]),
+        ("VC++ 2010", "https://download.microsoft.com/download/1/6/5/165255E7-1014-4D0A-B094-B6A430A6BFFC/vcredist_x86.exe", "vcredist_2010_x86.exe", &["/Q"] as &[&str]),
+        ("VC++ 2015", "https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x86.exe", "vcredist_2015_x86.exe", &["/install", "/passive", "/norestart"] as &[&str]),
+        ("DirectX End User Runtime", "https://download.microsoft.com/download/1/7/1/1718CCC4-6315-4D8E-9543-8E28A4E18C4C/dxwebsetup.exe", "dxwebsetup.exe", &["/Q"] as &[&str]),
+    ];
+
+    for (name, url, file, args) in redists.iter() {
+        let path = redist_dir.join(file);
+        println_info!("Installing {}", name);
+        download_and_install_dependency(url, &path, args).await;
+    }
+}

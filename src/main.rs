@@ -167,28 +167,6 @@ async fn windows_launcher_install(games: &Vec<Game<'_>>, master_url: &String) {
     }
 }
 
-// fn prompt_client_selection(games: &[Game]) -> String {
-//     println!(
-//         "Couldn't detect any games, please select a client to install in the current directory:"
-//     );
-//     for (i, g) in games.iter().enumerate() {
-//         for c in g.client.iter() {
-//             println!("{}: {}", i, c);
-//         }
-//     }
-//     let input: usize = misc::stdin().parse().unwrap();
-//     String::from(games[input].client[0])
-// }
-
-// async fn manual_install(games: &[Game<'_>]) {
-//     let selection = prompt_client_selection(games);
-//     let game = games.iter().find(|&g| g.client[0] == selection).unwrap();
-//     update(game, &env::current_dir().unwrap(), false, false).await;
-//     println!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
-//     std::io::stdin().read_line(&mut String::new()).unwrap();
-//     std::process::exit(0);
-// }
-
 fn total_download_size(cdn_info: &Vec<CdnFile>, remote_dir: &str) -> u64 {
     let remote_dir = format!("{}/", remote_dir);
     let mut size: u64 = 0;
@@ -598,6 +576,8 @@ async fn main() {
         println!("    --pass <args>: Pass arguments to the game");
         println!("    --skip-launcher-update: Skip launcher self-update");
         println!("    --ignore-required-files: Skip required files check");
+        println!("    --skip-redist: Skip redistributable installation");
+        println!("    --redist: (Re-)Install redistributables");
         println!(
             "\nExample:\n    alterware-launcher.exe iw4x --bonus --pass \"-console -nointro\""
         );
@@ -679,6 +659,20 @@ async fn main() {
         cfg.args = String::default();
     }
 
+    if arg_bool(&args, "--skip-redist") {
+        cfg.skip_redist = true;
+        arg_remove(&mut args, "--skip-redist");
+    }
+
+    #[cfg(windows)]
+    if arg_bool(&args, "--redist") {
+        arg_remove(&mut args, "--redist");
+        misc::install_dependencies(&install_path).await;
+        println_info!("Redistributables installation finished. Press enter to exit...");
+        misc::stdin();
+        std::process::exit(0);
+    }
+
     let games_json = http_async::get_body_string(format!("{}/games.json", master_url).as_str())
         .await
         .unwrap();
@@ -737,6 +731,11 @@ async fn main() {
                             "args",
                             cfg.args.clone(),
                         );
+                    }
+
+                    #[cfg(windows)]
+                    if !cfg.skip_redist {
+                        misc::install_dependencies(&install_path).await;
                     }
                 }
 
