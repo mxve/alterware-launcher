@@ -8,6 +8,10 @@
 
 ---
 
+**Only legitimate copies of the games are supported. If you don't own the game, please buy it.**
+
+---
+
 ## Installation
 
 1. Download the game from [Steam](https://store.steampowered.com/)
@@ -22,6 +26,8 @@
 - ```iw4-sp```, ```iw4x```, ```iw5-mod```, ```iw6-mod```, ```s1-mod```
   - Skip automatic detection and launch the specified game
     - This should always be the first argument if used
+- ```--help```
+  - Print help
 - ```--update```, ```-u```
   - Only update the game, don't launch it
 - ```--skip-launcher-update```
@@ -40,6 +46,10 @@
   - Print the launcher version
 - ```--ignore-required-files```
   - Install client even if required files are missing
+- ```--skip-redist```
+  - Skip redistributable installation
+- ```--redist```
+  - (Re-)install redistributables
 
 Example: ```alterware-launcher.exe iw4x --bonus -u --path "C:\Games\IW4x" --pass "-console"```
 
