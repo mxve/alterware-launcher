@@ -37,6 +37,7 @@ pub fn save_value(config_path: PathBuf, key: &str, value: bool) {
         "ask_bonus_content" => config.ask_bonus_content = value,
         "force_update" => config.force_update = value,
         "use_https" => config.use_https = value,
+        "skip_redist" => config.skip_redist = value,
         _ => (),
     }
     save(config_path, config);
