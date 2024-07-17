@@ -21,9 +21,9 @@ pub async fn latest_tag(owner: &str, repo: &str) -> String {
         Err(e) => {
             misc::fatal_error(&e);
             panic!()
-            // This panic shouldn't ever trigger, but compiler fucks up because of misc::fatal_error() exits the program.
+            // This panic shouldn't ever trigger, but compiler fucks up because misc::fatal_error() exits the program.
             //
-            // This error branc could and probably should be a recursive
+            // This error branch could and probably should be a recursive
             // function call, so that it doesn't just exit but it needs
             // converting from async syntax to Box<Future> syntax.
             //
