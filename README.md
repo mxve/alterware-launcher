@@ -80,6 +80,9 @@ alterware-launcher.json
   - Default: ""
 - ```use_https```
   - Use HTTPS for downloads
+  - Default: true
+- ```skip_redist```
+  - Skip redistributable installation
   - Default: false
 
 ---
