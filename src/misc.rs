@@ -6,10 +6,18 @@ use std::{
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
 
-pub fn get_file_sha1(path: &PathBuf) -> String {
-    let mut sha1 = sha1_smol::Sha1::new();
-    sha1.update(&fs::read(path).unwrap());
-    sha1.digest().to_string()
+pub fn file_blake3(file: &std::path::Path) -> std::io::Result<String> {
+    let mut blake3 = blake3::Hasher::new();
+    let mut file = std::fs::File::open(file)?;
+    let mut buffer = [0; 1024];
+    loop {
+        let n = std::io::Read::read(&mut file, &mut buffer)?;
+        if n == 0 {
+            break;
+        }
+        blake3.update(&buffer[..n]);
+    }
+    Ok(blake3.finalize().to_string())
 }
 
 pub fn stdin() -> String {

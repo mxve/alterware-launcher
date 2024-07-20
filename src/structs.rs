@@ -4,7 +4,7 @@ use std::path::Path;
 pub struct CdnFile {
     pub name: String,
     pub size: u32,
-    pub hash: String,
+    pub blake3: String,
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]

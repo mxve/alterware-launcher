@@ -202,17 +202,17 @@ async fn update_dir(
             continue;
         }
 
-        let sha1_remote = file.hash.to_lowercase();
+        let hash_remote = file.blake3.to_lowercase();
         let file_name = &file.name.replace(remote_dir_pre.as_str(), "");
         let file_path = dir.join(file_name);
         if file_path.exists() {
-            let sha1_local = hashes
+            let hash_local = hashes
                 .get(file_name)
                 .map(Cow::Borrowed)
-                .unwrap_or_else(|| Cow::Owned(misc::get_file_sha1(&file_path)))
+                .unwrap_or_else(|| Cow::Owned(misc::file_blake3(&file_path).unwrap()))
                 .to_string();
 
-            if sha1_local != sha1_remote {
+            if hash_local != hash_remote {
                 files_to_download.push(file.clone());
             } else {
                 let msg = format!(
@@ -222,7 +222,7 @@ async fn update_dir(
                 );
                 pb.println(&msg);
                 info!("{}", msg);
-                hashes.insert(file_name.to_owned(), file.hash.to_lowercase());
+                hashes.insert(file_name.to_owned(), file.blake3.to_lowercase());
             }
         } else {
             files_to_download.push(file.clone());
@@ -269,7 +269,7 @@ async fn update_dir(
         {
             panic!("{err}");
         };
-        let hash = misc::get_file_sha1(&file_path);
+        let hash = misc::file_blake3(&file_path).unwrap();
         hashes.insert(file_name.to_owned(), hash.to_lowercase());
         #[cfg(unix)]
         if file_name.ends_with(".exe") {
@@ -308,8 +308,17 @@ async fn update(
         std::process::exit(0);
     }
 
+    if dir.join(".sha-sums").exists() {
+        match fs::remove_file(dir.join(".sha-sums")) {
+            Ok(_) => {}
+            Err(error) => {
+                crate::println_error!("Error removing .sha-sums: {:#?}", error);
+            }
+        }
+    }
+
     let mut hashes = HashMap::new();
-    let hash_file = dir.join(".sha-sums");
+    let hash_file = dir.join(".hashes");
     if hash_file.exists() && !force {
         let hash_file = fs::read_to_string(hash_file).unwrap();
         for line in hash_file.lines() {
@@ -445,7 +454,7 @@ async fn update(
     for (file, hash) in hashes.iter() {
         hash_file_content.push_str(&format!("{} {}\n", hash, file));
     }
-    fs::write(dir.join(".sha-sums"), hash_file_content).unwrap();
+    fs::write(dir.join(".hashes"), hash_file_content).unwrap();
 }
 
 #[cfg(windows)]
