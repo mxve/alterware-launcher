@@ -469,7 +469,7 @@ fn launch(file_path: &PathBuf, args: &str) {
         .wait()
         .expect("Failed to wait for the game process to finish");
 
-    crate::println_error!("Game exited with status: {}", exit_status);
+    crate::println_error!("Game exited with {}", exit_status);
     if !exit_status.success() {
         misc::stdin();
     }
@@ -498,7 +498,7 @@ fn launch(file_path: &PathBuf, args: &str) {
             .expect("Failed to wait for the game process to finish")
     };
 
-    crate::println_error!("Game exited with status: {}", exit_status);
+    crate::println_error!("Game exited with {}", exit_status);
     if !exit_status.success() {
         misc::stdin();
     }
