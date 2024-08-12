@@ -13,7 +13,7 @@ panic = "abort"
 [dependencies]
 blake3 = "1.5.3"
 serde = { version = "1.0.204", features = ["derive"] }
-serde_json = "1.0.120"
+serde_json = "1.0.124"
 rand = "0.8.5"
 semver = "1.0.23"
 colored = "2.1.0"
