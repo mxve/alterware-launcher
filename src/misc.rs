@@ -131,7 +131,7 @@ async fn download_and_install_dependency(url: &str, path: &Path, args: &[&str]) 
                 }
             }
         }
-        match crate::http_async::download_file(url,  &std::path::PathBuf::from(path)).await {
+        match crate::http_async::download_file(url, &std::path::PathBuf::from(path)).await {
             Ok(_) => info!("Downloaded {}", path.display()),
             Err(e) => println_error!("Error downloading {}: {}", path.display(), e),
         }
