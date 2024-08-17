@@ -1,7 +1,4 @@
-use std::{
-    fs,
-    path::{Path},
-};
+use std::{fs, path::Path};
 
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
