@@ -258,17 +258,28 @@ async fn update_dir(
                 fs::create_dir_all(parent).unwrap();
             }
         }
-        if let Err(err) = http_async::download_file_progress(
-            &client,
-            pb,
-            &format!("{}/{}", master_url, file.name),
-            &file_path,
-            file.size as u64,
-        )
-        .await
-        {
-            panic!("{err}");
-        };
+        
+        // Prompt user to retry downloads if they fail
+        let mut download_complete : bool = false;
+        while !download_complete {
+            if let Err(err) = http_async::download_file_progress(
+                &client,
+                pb,
+                &format!("{}/{}", master_url, file.name),
+                &file_path,
+                file.size as u64,
+            )
+            .await
+            {
+                println!("Failed to download file {}, retry? (Y/n)", file_path.clone().display());
+                let input = misc::stdin().to_ascii_lowercase();
+                if input == "n" {
+                    panic!("{err}");
+                } 
+            };
+            download_complete = true;
+        }
+
         let hash = misc::file_blake3(&file_path).unwrap();
         hashes.insert(file_name.to_owned(), hash.to_lowercase());
         #[cfg(unix)]
