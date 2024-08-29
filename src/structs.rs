@@ -1,5 +1,5 @@
 use colored::*;
-use std::path::Path;
+use std::{collections::HashMap, path::Path};
 
 #[derive(serde::Deserialize, serde::Serialize, Clone)]
 pub struct CdnFile {
@@ -73,4 +73,10 @@ impl PrintPrefix {
     pub fn formatted(&self) -> String {
         format!("[{}]{:width$}", self.text, "", width = self.padding).to_string()
     }
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Default)]
+pub struct Cache {
+    pub iw4x_revision: String,
+    pub hashes: HashMap<String, String>,
 }

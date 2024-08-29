@@ -1,7 +1,11 @@
 use indicatif::{ProgressBar, ProgressStyle};
-use std::{fs, path::Path};
+use std::{
+    fs::{self, OpenOptions},
+    io::Write,
+    path::Path,
+};
 
-use crate::global;
+use crate::{global, structs};
 
 pub fn file_blake3(file: &std::path::Path) -> std::io::Result<String> {
     let mut blake3 = blake3::Hasher::new();
@@ -163,4 +167,32 @@ pub fn prefix(tag_name: &str) -> String {
     global::PREFIXES
         .get(tag_name)
         .map_or_else(|| tag_name.to_string(), |tag| tag.formatted())
+}
+
+pub fn get_cache(dir: &Path) -> structs::Cache {
+    let mut cache_file = OpenOptions::new()
+        .read(true)
+        .create(true)
+        .append(true)
+        .open(dir.join("awcache.json"))
+        .unwrap();
+    let mut cache_s = String::new();
+    std::io::Read::read_to_string(&mut cache_file, &mut cache_s).unwrap();
+    let cache: structs::Cache = if cache_s.trim().is_empty() {
+        structs::Cache::default()
+    } else {
+        serde_json::from_str(&cache_s).unwrap_or(structs::Cache::default())
+    };
+    cache
+}
+
+pub fn save_cache(dir: &Path, cache: structs::Cache) {
+    let mut cache_file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(dir.join("awcache.json"))
+        .unwrap();
+    let cache_serialized = serde_json::to_string_pretty(&cache).unwrap();
+    cache_file.write_all(cache_serialized.as_bytes()).unwrap();
 }

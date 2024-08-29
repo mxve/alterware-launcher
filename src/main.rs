@@ -18,7 +18,12 @@ use indicatif::ProgressBar;
 #[cfg(windows)]
 use mslnk::ShellLink;
 use simple_log::LogConfigBuilder;
-use std::{borrow::Cow, collections::HashMap, env, fs, path::Path, path::PathBuf};
+use std::{
+    borrow::Cow,
+    collections::HashMap,
+    env, fs,
+    path::{Path, PathBuf},
+};
 #[cfg(windows)]
 use steamlocate::SteamDir;
 
@@ -328,20 +333,14 @@ async fn update(
         }
     }
 
-    let mut hashes = HashMap::new();
-    let hash_file = dir.join(".hashes");
-    if hash_file.exists() && !force {
-        let hash_file = fs::read_to_string(hash_file).unwrap();
-        for line in hash_file.lines() {
-            let mut split = line.split_whitespace();
-            let hash = split.next().unwrap();
-            let file = split.next().unwrap();
-            hashes.insert(file.to_owned(), hash.to_owned());
-        }
-    }
+    let mut cache = if force {
+        structs::Cache::default()
+    } else {
+        misc::get_cache(dir)
+    };
 
     if game.engine == "iw4" {
-        iw4x::update(dir).await;
+        iw4x::update(dir, &mut cache).await;
 
         let iw4x_dirs = vec!["iw4x", "zone/patch"];
         for d in &iw4x_dirs {
@@ -400,11 +399,19 @@ async fn update(
     }
 
     let pb = ProgressBar::new(0);
-    update_dir(&cdn_info, game.engine, dir, &mut hashes, &pb, skip_iw4x_sp).await;
+    update_dir(
+        &cdn_info,
+        game.engine,
+        dir,
+        &mut cache.hashes,
+        &pb,
+        skip_iw4x_sp,
+    )
+    .await;
 
     if bonus_content && !game.bonus.is_empty() {
         for bonus in game.bonus.iter() {
-            update_dir(&cdn_info, bonus, dir, &mut hashes, &pb, skip_iw4x_sp).await;
+            update_dir(&cdn_info, bonus, dir, &mut cache.hashes, &pb, skip_iw4x_sp).await;
         }
     }
 
@@ -435,11 +442,7 @@ async fn update(
         }
     }
 
-    let mut hash_file_content = String::new();
-    for (file, hash) in hashes.iter() {
-        hash_file_content.push_str(&format!("{hash} {file}\n"));
-    }
-    fs::write(dir.join(".hashes"), hash_file_content).unwrap();
+    misc::save_cache(dir, cache);
 }
 
 #[cfg(windows)]

@@ -2,24 +2,17 @@ use crate::github;
 use crate::global::*;
 use crate::http_async;
 use crate::misc;
+use crate::structs;
 
-use std::{fs, path::Path};
-
-pub fn local_revision(dir: &Path) -> u16 {
-    if let Ok(revision) = fs::read_to_string(dir.join(".iw4xrevision")) {
-        misc::rev_to_int(&revision)
-    } else {
-        0
-    }
-}
+use std::path::Path;
 
 pub async fn remote_revision() -> u16 {
     misc::rev_to_int(&github::latest_tag(GH_IW4X_OWNER, GH_IW4X_REPO).await)
 }
 
-pub async fn update(dir: &Path) {
+pub async fn update(dir: &Path, cache: &mut structs::Cache) {
     let remote = remote_revision().await;
-    let local = local_revision(dir);
+    let local = misc::rev_to_int(&cache.iw4x_revision);
 
     if remote <= local && dir.join("iw4x.dll").exists() {
         crate::println_info!("No files to download for IW4x");
@@ -44,5 +37,6 @@ pub async fn update(dir: &Path) {
     )
     .await
     .unwrap();
-    fs::write(dir.join(".iw4xrevision"), format!("r{remote}")).unwrap();
+
+    cache.iw4x_revision = format!("r{remote}");
 }
