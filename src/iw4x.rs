@@ -19,11 +19,8 @@ pub async fn update(dir: &Path, cache: &mut structs::Cache) {
         return;
     }
 
-    crate::println_info!(
-        "{}Downloading outdated or missing files for IW4x",
-        misc::prefix("info")
-    );
-    crate::println_info!(
+    crate::println_info!("Downloading outdated or missing files for IW4x",);
+    println!(
         "{}{}",
         misc::prefix("downloading"),
         misc::cute_path(&dir.join("iw4x.dll"))
