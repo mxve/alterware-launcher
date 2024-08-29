@@ -28,5 +28,5 @@ pub async fn latest_version(owner: &str, repo: &str) -> Version {
 }
 
 pub fn latest_release_url(owner: &str, repo: &str) -> String {
-    format!("https://github.com/{}/{}/releases/latest", owner, repo)
+    format!("https://github.com/{owner}/{repo}/releases/latest")
 }

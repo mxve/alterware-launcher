@@ -3,7 +3,6 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 
-use colored::*;
 use futures_util::StreamExt;
 use indicatif::ProgressBar;
 use reqwest::Client;
@@ -29,18 +28,18 @@ pub async fn download_file_progress(
         )
         .send()
         .await
-        .or(Err(format!("Failed to GET from '{}'", &url)))?;
+        .or(Err(format!("Failed to GET from '{url}'")))?;
     // Fix for CF shenanigans
     let total_size = res.content_length().unwrap_or(size);
     pb.set_length(total_size);
     let msg = format!(
-        "[{}] {} ({})",
-        "Downloading".bright_yellow(),
+        "{}{} ({})",
+        misc::prefix("downloading"),
         misc::cute_path(path),
         misc::human_readable_bytes(total_size)
     );
     pb.println(&msg);
-    info!("{}", msg);
+    info!("{msg}");
     pb.set_message(path.file_name().unwrap().to_str().unwrap().to_string());
 
     let mut file =
@@ -109,7 +108,7 @@ pub async fn get_body(url: &str) -> Result<Vec<u8>, String> {
         .await
     {
         Ok(res) => {
-            debug!("{} {}", res.status().to_string(), url);
+            debug!("{} {url}", res.status().to_string());
             let body = res.bytes().await.or(Err("Failed to get body"))?;
             Ok(body.to_vec())
         }

@@ -30,7 +30,7 @@ fn get_installed_games(games: &Vec<Game>) -> Vec<(u32, PathBuf)> {
     let steamdir = match steamdir_result {
         Ok(steamdir) => steamdir,
         Err(error) => {
-            crate::println_error!("Error locating Steam: {}", error);
+            crate::println_error!("Error locating Steam: {error}");
             return installed_games;
         }
     };
@@ -55,7 +55,7 @@ fn create_shortcut(path: &Path, target: &Path, icon: String, args: String) {
         sl.set_arguments(Some(args));
         sl.set_icon_location(Some(icon));
         sl.create_lnk(path).unwrap_or_else(|error| {
-            crate::println_error!("Error creating shortcut.\n{:#?}", error);
+            crate::println_error!("Error creating shortcut.\n{error}");
         });
     } else {
         crate::println_error!("Error creating shortcut.");
@@ -70,10 +70,10 @@ fn setup_client_links(game: &Game, game_dir: &Path) {
 
     for c in game.client.iter() {
         create_shortcut(
-            &game_dir.join(format!("launch-{}.lnk", c)),
+            &game_dir.join(format!("launch-{c}.lnk")),
             &game_dir.join("alterware-launcher.exe"),
             game_dir
-                .join(format!("{}.exe", c))
+                .join(format!("{c}.exe"))
                 .to_string_lossy()
                 .into_owned(),
             c.to_string(),
@@ -86,16 +86,14 @@ fn setup_desktop_links(path: &Path, game: &Game) {
     println!("Create Desktop shortcut? (Y/n)");
     let input = misc::stdin().to_ascii_lowercase();
 
-    if input == "y" || input.is_empty() {
+    if input != "n" {
         let desktop = PathBuf::from(&format!("{}\\Desktop", env::var("USERPROFILE").unwrap()));
 
         for c in game.client.iter() {
             create_shortcut(
-                &desktop.join(format!("{}.lnk", c)),
+                &desktop.join(format!("{c}.lnk")),
                 &path.join("alterware-launcher.exe"),
-                path.join(format!("{}.exe", c))
-                    .to_string_lossy()
-                    .into_owned(),
+                path.join(format!("{c}.exe")).to_string_lossy().into_owned(),
                 c.to_string(),
             );
         }
@@ -103,14 +101,14 @@ fn setup_desktop_links(path: &Path, game: &Game) {
 }
 
 #[cfg(windows)]
-async fn auto_install(path: &Path, game: &Game<'_>, master_url: &String) {
+async fn auto_install(path: &Path, game: &Game<'_>) {
     setup_client_links(game, path);
     setup_desktop_links(path, game);
-    update(game, path, false, false, None, master_url, None).await;
+    update(game, path, false, false, None, None).await;
 }
 
 #[cfg(windows)]
-async fn windows_launcher_install(games: &Vec<Game<'_>>, master_url: &String) {
+async fn windows_launcher_install(games: &Vec<Game<'_>>) {
     crate::println_info!(
         "{}",
         "No game specified/found. Checking for installed Steam games..".yellow()
@@ -124,7 +122,7 @@ async fn windows_launcher_install(games: &Vec<Game<'_>>, master_url: &String) {
                 crate::println_info!("Found game in current directory.");
                 crate::println_info!("Installing AlterWare client for {}.", id);
                 let game = games.iter().find(|&g| g.app_id == *id).unwrap();
-                auto_install(path, game, master_url).await;
+                auto_install(path, game).await;
                 crate::println_info!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
                 std::io::stdin().read_line(&mut String::new()).unwrap();
                 std::process::exit(0);
@@ -134,7 +132,7 @@ async fn windows_launcher_install(games: &Vec<Game<'_>>, master_url: &String) {
         println!("Installed games:");
 
         for (id, path) in installed_games.iter() {
-            println!("{}: {}", id, path.display());
+            println!("{id}: {}", path.display());
         }
 
         println!("Enter the ID of the game you want to install the AlterWare client for:");
@@ -148,11 +146,16 @@ async fn windows_launcher_install(games: &Vec<Game<'_>>, master_url: &String) {
                 let target_path = path.join("alterware-launcher.exe");
 
                 if launcher_path != target_path {
-                    fs::copy(launcher_path, target_path).unwrap();
+                    fs::copy(launcher_path, &target_path).unwrap();
                     crate::println_info!("Launcher copied to {}", path.display());
                 }
-                auto_install(path, game, master_url).await;
-                crate::println_info!("Installation complete. Please run the launcher again or use a shortcut to launch the game.");
+                auto_install(path, game).await;
+                crate::println_info!("Installation complete.");
+                crate::println_info!("Please use one of the shortcuts (on your Desktop or in the game folder) to play.");
+                crate::println_info!(
+                    "Alternatively run the launcher again from the game folder {}",
+                    target_path.display()
+                );
                 std::io::stdin().read_line(&mut String::new()).unwrap();
                 break;
             }
@@ -168,7 +171,7 @@ async fn windows_launcher_install(games: &Vec<Game<'_>>, master_url: &String) {
 }
 
 fn total_download_size(cdn_info: &Vec<CdnFile>, remote_dir: &str) -> u64 {
-    let remote_dir = format!("{}/", remote_dir);
+    let remote_dir = format!("{remote_dir}/");
     let mut size: u64 = 0;
     for file in cdn_info {
         if !file.name.starts_with(&remote_dir) || file.name == "iw4/iw4x.dll" {
@@ -186,11 +189,10 @@ async fn update_dir(
     hashes: &mut HashMap<String, String>,
     pb: &ProgressBar,
     skip_iw4x_sp: bool,
-    master_url: &String,
 ) {
     misc::pb_style_download(pb, false);
 
-    let remote_dir_pre = format!("{}/", remote_dir);
+    let remote_dir_pre = format!("{remote_dir}/");
 
     let mut files_to_download: Vec<CdnFile> = vec![];
 
@@ -215,13 +217,9 @@ async fn update_dir(
             if hash_local != hash_remote {
                 files_to_download.push(file.clone());
             } else {
-                let msg = format!(
-                    "[{}]     {}",
-                    "Checked".bright_blue(),
-                    misc::cute_path(&file_path)
-                );
+                let msg = format!("{}{}", misc::prefix("checked"), misc::cute_path(&file_path));
                 pb.println(&msg);
-                info!("{}", msg);
+                info!("{msg}");
                 hashes.insert(file_name.to_owned(), file.blake3.to_lowercase());
             }
         } else {
@@ -231,22 +229,21 @@ async fn update_dir(
 
     if files_to_download.is_empty() {
         let msg = format!(
-            "[{}]        No files to download for {}",
-            "Info".bright_magenta(),
+            "{}No files to download for {}",
+            misc::prefix("info"),
             remote_dir
         );
         pb.println(&msg);
-        info!("{}", msg);
+        info!("{msg}");
         return;
     }
     let msg = format!(
-        "[{}]        Downloading outdated or missing files for {}, {}",
-        "Info".bright_magenta(),
-        remote_dir,
+        "{}Downloading outdated or missing files for {remote_dir}, {}",
+        misc::prefix("info"),
         misc::human_readable_bytes(total_download_size(&files_to_download, remote_dir))
     );
     pb.println(&msg);
-    info!("{}", msg);
+    info!("{msg}");
 
     misc::pb_style_download(pb, true);
     let client = reqwest::Client::new();
@@ -258,24 +255,27 @@ async fn update_dir(
                 fs::create_dir_all(parent).unwrap();
             }
         }
-        
+
         // Prompt user to retry downloads if they fail
-        let mut download_complete : bool = false;
+        let mut download_complete: bool = false;
         while !download_complete {
             if let Err(err) = http_async::download_file_progress(
                 &client,
                 pb,
-                &format!("{}/{}", master_url, file.name),
+                &format!("{}/{}", MASTER.lock().unwrap(), file.name),
                 &file_path,
                 file.size as u64,
             )
             .await
             {
-                println!("Failed to download file {}, retry? (Y/n)", file_path.clone().display());
+                println!(
+                    "Failed to download file {}, retry? (Y/n)",
+                    file_path.clone().display()
+                );
                 let input = misc::stdin().to_ascii_lowercase();
                 if input == "n" {
                     panic!("{err}");
-                } 
+                }
             };
             download_complete = true;
         }
@@ -286,7 +286,7 @@ async fn update_dir(
         if file_name.ends_with(".exe") {
             let perms = std::os::unix::fs::PermissionsExt::from_mode(0o755);
             fs::set_permissions(&file_path, perms).unwrap_or_else(|error| {
-                crate::println_error!("Error setting permissions for {}: {:#?}", file_name, error);
+                crate::println_error!("Error setting permissions for {file_name}: {error}");
             })
         }
     }
@@ -299,15 +299,15 @@ async fn update(
     bonus_content: bool,
     force: bool,
     skip_iw4x_sp: Option<bool>,
-    master_url: &String,
     ignore_required_files: Option<bool>,
 ) {
     let skip_iw4x_sp = skip_iw4x_sp.unwrap_or(false);
     let ignore_required_files = ignore_required_files.unwrap_or(false);
 
-    let res = http_async::get_body_string(format!("{}/files.json", master_url).as_str())
-        .await
-        .unwrap();
+    let res =
+        http_async::get_body_string(format!("{}/files.json", MASTER.lock().unwrap()).as_str())
+            .await
+            .unwrap();
     let cdn_info: Vec<CdnFile> = serde_json::from_str(&res).unwrap();
 
     if !ignore_required_files && !game.required_files_exist(dir) {
@@ -323,7 +323,7 @@ async fn update(
         match fs::remove_file(dir.join(".sha-sums")) {
             Ok(_) => {}
             Err(error) => {
-                crate::println_error!("Error removing .sha-sums: {:#?}", error);
+                crate::println_error!("Error removing .sha-sums: {error}");
             }
         }
     }
@@ -381,15 +381,15 @@ async fn update(
                         }
 
                         crate::println_info!(
-                            "[{}]     {}",
-                            "Removed".bright_red(),
+                            "{}{}",
+                            misc::prefix("removed"),
                             misc::cute_path(&file_path)
                         );
 
                         if fs::remove_file(&file_path).is_err() {
                             crate::println_error!(
-                                "[{}]      Couldn't delete {}",
-                                "Error".bright_red(),
+                                "{}Couldn't delete {}",
+                                misc::prefix("error"),
                                 misc::cute_path(&file_path)
                             );
                         }
@@ -400,29 +400,11 @@ async fn update(
     }
 
     let pb = ProgressBar::new(0);
-    update_dir(
-        &cdn_info,
-        game.engine,
-        dir,
-        &mut hashes,
-        &pb,
-        skip_iw4x_sp,
-        master_url,
-    )
-    .await;
+    update_dir(&cdn_info, game.engine, dir, &mut hashes, &pb, skip_iw4x_sp).await;
 
     if bonus_content && !game.bonus.is_empty() {
         for bonus in game.bonus.iter() {
-            update_dir(
-                &cdn_info,
-                bonus,
-                dir,
-                &mut hashes,
-                &pb,
-                skip_iw4x_sp,
-                master_url,
-            )
-            .await;
+            update_dir(&cdn_info, bonus, dir, &mut hashes, &pb, skip_iw4x_sp).await;
         }
     }
 
@@ -433,37 +415,29 @@ async fn update(
         if file_path.is_file() {
             if fs::remove_file(&file_path).is_err() {
                 println!(
-                    "[{}]      Couldn't delete {}",
-                    "Error".bright_red(),
+                    "{}Couldn't delete {}",
+                    misc::prefix("error"),
                     misc::cute_path(&file_path)
                 );
             } else {
-                println!(
-                    "[{}]     {}",
-                    "Removed".bright_red(),
-                    misc::cute_path(&file_path)
-                );
+                println!("{}{}", misc::prefix("removed"), misc::cute_path(&file_path));
             }
         } else if file_path.is_dir() {
             if fs::remove_dir_all(&file_path).is_err() {
                 println!(
-                    "[{}]      Couldn't delete {}",
-                    "Error".bright_red(),
+                    "{}Couldn't delete {}",
+                    misc::prefix("error"),
                     misc::cute_path(&file_path)
                 );
             } else {
-                println!(
-                    "[{}]     {}",
-                    "Removed".bright_red(),
-                    misc::cute_path(&file_path)
-                );
+                println!("{}{}", misc::prefix("removed"), misc::cute_path(&file_path));
             }
         }
     }
 
     let mut hash_file_content = String::new();
     for (file, hash) in hashes.iter() {
-        hash_file_content.push_str(&format!("{} {}\n", hash, file));
+        hash_file_content.push_str(&format!("{hash} {file}\n"));
     }
     fs::write(dir.join(".hashes"), hash_file_content).unwrap();
 }
@@ -471,7 +445,7 @@ async fn update(
 #[cfg(windows)]
 fn launch(file_path: &PathBuf, args: &str) {
     println!("\n\nJoin the AlterWare Discord server:\nhttps://discord.gg/2ETE8engZM\n\n");
-    crate::println_info!("Launching {} {}", file_path.display(), args);
+    crate::println_info!("Launching {} {args}", file_path.display());
     let exit_status = std::process::Command::new(file_path)
         .args(args.trim().split(' '))
         .current_dir(file_path.parent().unwrap())
@@ -480,7 +454,7 @@ fn launch(file_path: &PathBuf, args: &str) {
         .wait()
         .expect("Failed to wait for the game process to finish");
 
-    crate::println_error!("Game exited with {}", exit_status);
+    crate::println_error!("Game exited with {exit_status}");
     if !exit_status.success() {
         misc::stdin();
     }
@@ -489,7 +463,7 @@ fn launch(file_path: &PathBuf, args: &str) {
 #[cfg(unix)]
 fn launch(file_path: &PathBuf, args: &str) {
     println!("\n\nJoin the AlterWare Discord server:\nhttps://discord.gg/2ETE8engZM\n\n");
-    crate::println_info!("Launching {} {}", file_path.display(), args);
+    crate::println_info!("Launching {} {args}", file_path.display());
     let exit_status = if misc::is_program_in_path("wine") {
         println!("Found wine, launching game using wine.\nIf you run into issues or want to launch a different way, run {} manually.", file_path.display());
         std::process::Command::new("wine")
@@ -509,7 +483,7 @@ fn launch(file_path: &PathBuf, args: &str) {
             .expect("Failed to wait for the game process to finish")
     };
 
-    crate::println_error!("Game exited with {}", exit_status);
+    crate::println_error!("Game exited with {exit_status}");
     if !exit_status.success() {
         misc::stdin();
     }
@@ -610,7 +584,7 @@ async fn main() {
             "AlterWare Launcher".bright_green(),
             env!("CARGO_PKG_VERSION")
         );
-        println!("https://github.com/{}/{}", GH_OWNER, GH_REPO);
+        println!("https://github.com/{GH_OWNER}/{GH_REPO}");
         println!(
             "\n{}{}{}{}{}{}{}",
             "For ".on_black(),
@@ -637,10 +611,9 @@ async fn main() {
 
     let mut cfg = config::load(install_path.join("alterware-launcher.json"));
 
-    let master_url = if cfg.use_https {
-        format!("https://{}", MASTER)
-    } else {
-        format!("http://{}", MASTER)
+    if !cfg.use_https {
+        let mut master_url = MASTER.lock().unwrap();
+        *master_url = master_url.replace("https://", "http://");
     };
 
     if !arg_bool(&args, "--skip-launcher-update") && !cfg.skip_self_update {
@@ -693,9 +666,10 @@ async fn main() {
         std::process::exit(0);
     }
 
-    let games_json = http_async::get_body_string(format!("{}/games.json", master_url).as_str())
-        .await
-        .unwrap();
+    let games_json =
+        http_async::get_body_string(format!("{}/games.json", MASTER.lock().unwrap()).as_str())
+            .await
+            .unwrap();
     let games: Vec<Game> = serde_json::from_str(&games_json).unwrap_or_else(|error| {
         crate::println_error!("Error parsing games.json: {:#?}", error);
         misc::stdin();
@@ -722,7 +696,7 @@ async fn main() {
                         println!("Multiple clients installed, set the client as the first argument to launch a specific client.");
                         println!("Select a client to launch:");
                         for (i, c) in g.client.iter().enumerate() {
-                            println!("{}: {}", i, c);
+                            println!("{i}: {c}");
                         }
                         game = String::from(g.client[misc::stdin().parse::<usize>().unwrap()]);
                         break 'main;
@@ -759,15 +733,6 @@ async fn main() {
                     }
                 }
 
-                if cfg.engine == "iw4" && !cfg.args.contains("+set logfile 1") {
-                    cfg.args = format!("{} +set logfile 1", cfg.args);
-                    config::save_value_s(
-                        install_path.join("alterware-launcher.json"),
-                        "args",
-                        cfg.args.clone(),
-                    );
-                }
-
                 if cfg.ask_bonus_content && !g.bonus.is_empty() {
                     println!("Download bonus content? (Y/n)");
                     let input = misc::stdin().to_ascii_lowercase();
@@ -790,12 +755,11 @@ async fn main() {
                     cfg.download_bonus_content,
                     cfg.force_update,
                     Some(&game != "iw4x-sp"),
-                    &master_url,
                     Some(ignore_required_files),
                 )
                 .await;
                 if !cfg.update_only {
-                    launch(&install_path.join(format!("{}.exe", c)), &cfg.args);
+                    launch(&install_path.join(format!("{c}.exe")), &cfg.args);
                 }
                 return;
             }
@@ -803,9 +767,9 @@ async fn main() {
     }
 
     #[cfg(windows)]
-    windows_launcher_install(&games, &master_url).await;
+    windows_launcher_install(&games).await;
 
-    crate::println_error!("{}", "Game not found!".bright_red());
+    crate::println_error!("Game not found!");
     println!("Place the launcher in the game folder, if that doesn't work specify the client on the command line (ex. alterware-launcher.exe iw4-sp)");
     println!("Press enter to exit...");
     std::io::stdin().read_line(&mut String::new()).unwrap();

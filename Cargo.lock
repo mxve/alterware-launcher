@@ -26,6 +26,7 @@ dependencies = [
  "futures-util",
  "indicatif",
  "mslnk",
+ "once_cell",
  "openssl",
  "rand",
  "reqwest",

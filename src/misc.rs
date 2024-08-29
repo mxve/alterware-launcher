@@ -1,7 +1,7 @@
+use indicatif::{ProgressBar, ProgressStyle};
 use std::{fs, path::Path};
 
-use colored::Colorize;
-use indicatif::{ProgressBar, ProgressStyle};
+use crate::global;
 
 pub fn file_blake3(file: &std::path::Path) -> std::io::Result<String> {
     let mut blake3 = blake3::Hasher::new();
@@ -31,7 +31,7 @@ pub fn rev_to_int(rev: &str) -> u16 {
 }
 
 pub fn fatal_error(error: &str) {
-    crate::println_error!("{}: {}", "Error".bright_red(), error);
+    crate::println_error!("{}: {error}", prefix("error"));
     stdin();
     std::process::exit(1);
 }
@@ -44,7 +44,7 @@ pub fn human_readable_bytes(bytes: u64) -> String {
         bytes /= 1024.0;
         i += 1;
     }
-    format!("{:.2}{}", bytes, units[i])
+    format!("{bytes:.2}{}", units[i])
 }
 
 pub fn pb_style_download(pb: &ProgressBar, state: bool) {
@@ -66,7 +66,7 @@ pub fn cute_path(path: &Path) -> String {
 pub fn is_program_in_path(program: &str) -> bool {
     if let Ok(path) = std::env::var("PATH") {
         for p in path.split(':') {
-            let p_str = format!("{}/{}", p, program);
+            let p_str = format!("{p}/{program}");
             if fs::metadata(p_str).is_ok() {
                 return true;
             }
@@ -78,7 +78,7 @@ pub fn is_program_in_path(program: &str) -> bool {
 #[macro_export]
 macro_rules! println_info {
     ($($arg:tt)*) => {{
-        println!($($arg)*);
+        println!("{}", format!("{}{}", $crate::misc::prefix("info"), format!($($arg)*)));
         info!($($arg)*);
     }}
 }
@@ -86,7 +86,7 @@ macro_rules! println_info {
 #[macro_export]
 macro_rules! println_error {
     ($($arg:tt)*) => {{
-        eprintln!($($arg)*);
+        eprintln!("{}", format!("{}{}", $crate::misc::prefix("error"), format!($($arg)*)));
         error!($($arg)*);
     }}
 }
@@ -97,7 +97,7 @@ fn install_dependency(path: &Path, args: &[&str]) {
         match runas::Command::new(path).args(args).status() {
             Ok(status) => {
                 if !status.success() && !matches!(status.code(), Some(1638) | Some(3010)) {
-                    println_error!("Error installing dependency {}, {}", path.display(), status);
+                    println_error!("Error installing dependency {}, {status}", path.display());
                 } else {
                     info!("{} installed successfully", path.display());
                 }
@@ -109,7 +109,7 @@ fn install_dependency(path: &Path, args: &[&str]) {
                         path.display()
                     );
                 } else {
-                    println_error!("Error running file {}: {}", path.display(), e);
+                    println_error!("Error running file {}: {e}", path.display());
                 }
             }
         }
@@ -121,19 +121,19 @@ fn install_dependency(path: &Path, args: &[&str]) {
 #[cfg(windows)]
 async fn download_and_install_dependency(url: &str, path: &Path, args: &[&str]) {
     if !path.exists() {
-        info!("Downloading {} from {}", path.display(), url);
+        info!("Downloading {} from {url}", path.display());
         if let Some(parent) = path.parent() {
             match fs::create_dir_all(parent) {
                 Ok(_) => (),
                 Err(e) => {
-                    println_error!("Error creating directory {}: {}", parent.display(), e);
+                    println_error!("Error creating directory {}: {e}", parent.display());
                     return;
                 }
             }
         }
         match crate::http_async::download_file(url, &std::path::PathBuf::from(path)).await {
             Ok(_) => info!("Downloaded {}", path.display()),
-            Err(e) => println_error!("Error downloading {}: {}", path.display(), e),
+            Err(e) => println_error!("Error downloading {}: {e}", path.display()),
         }
     }
     install_dependency(path, args);
@@ -154,7 +154,13 @@ pub async fn install_dependencies(install_path: &Path) {
 
     for (name, url, file, args) in redists.iter() {
         let path = redist_dir.join(file);
-        println_info!("Installing {}", name);
+        println_info!("Installing {name}");
         download_and_install_dependency(url, &path, args).await;
     }
+}
+
+pub fn prefix(tag_name: &str) -> String {
+    global::PREFIXES
+        .get(tag_name)
+        .map_or_else(|| tag_name.to_string(), |tag| tag.formatted())
 }

@@ -3,7 +3,6 @@ use crate::global::*;
 use crate::http_async;
 use crate::misc;
 
-use colored::*;
 use std::{fs, path::Path};
 
 pub fn local_revision(dir: &Path) -> u16 {
@@ -23,20 +22,17 @@ pub async fn update(dir: &Path) {
     let local = local_revision(dir);
 
     if remote <= local && dir.join("iw4x.dll").exists() {
-        crate::println_info!(
-            "[{}]        No files to download for IW4x",
-            "Info".bright_magenta(),
-        );
+        crate::println_info!("No files to download for IW4x");
         return;
     }
 
     crate::println_info!(
-        "[{}]        Downloading outdated or missing files for IW4x",
-        "Info".bright_magenta()
+        "{}Downloading outdated or missing files for IW4x",
+        misc::prefix("info")
     );
     crate::println_info!(
-        "[{}] {}",
-        "Downloading".bright_yellow(),
+        "{}{}",
+        misc::prefix("downloading"),
         misc::cute_path(&dir.join("iw4x.dll"))
     );
     http_async::download_file(
@@ -48,5 +44,5 @@ pub async fn update(dir: &Path) {
     )
     .await
     .unwrap();
-    fs::write(dir.join(".iw4xrevision"), format!("r{}", remote)).unwrap();
+    fs::write(dir.join(".iw4xrevision"), format!("r{remote}")).unwrap();
 }

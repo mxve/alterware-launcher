@@ -1,3 +1,4 @@
+use colored::*;
 use std::path::Path;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone)]
@@ -60,5 +61,16 @@ impl Default for Config {
             use_https: true,
             skip_redist: false,
         }
+    }
+}
+
+pub struct PrintPrefix {
+    pub text: ColoredString,
+    pub padding: usize,
+}
+
+impl PrintPrefix {
+    pub fn formatted(&self) -> String {
+        format!("[{}]{:width$}", self.text, "", width = self.padding).to_string()
     }
 }
