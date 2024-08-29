@@ -324,11 +324,14 @@ async fn update(
         std::process::exit(0);
     }
 
-    if dir.join(".sha-sums").exists() {
-        match fs::remove_file(dir.join(".sha-sums")) {
-            Ok(_) => {}
-            Err(error) => {
-                crate::println_error!("Error removing .sha-sums: {error}");
+    let old_files = [".sha-sums", ".iw4xrevision"];
+    for f in old_files {
+        if dir.join(f).exists() {
+            match fs::remove_file(dir.join(f)) {
+                Ok(_) => {}
+                Err(error) => {
+                    crate::println_error!("Error removing {f}: {error}");
+                }
             }
         }
     }
