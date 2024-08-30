@@ -70,7 +70,7 @@ fn create_shortcut(path: &Path, target: &Path, icon: String, args: String) {
 #[cfg(windows)]
 fn setup_client_links(game: &Game, game_dir: &Path) {
     if game.client.len() > 1 {
-        crate::println_error!("Multiple clients installed, use the shortcuts (launch-<client>.lnk in the game directory or on the desktop) to launch a specific client.");
+        println!("Multiple clients installed, use the shortcuts (launch-<client>.lnk in the game directory or on the desktop) to launch a specific client.");
     }
 
     for c in game.client.iter() {
