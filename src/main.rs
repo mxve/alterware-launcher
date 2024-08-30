@@ -324,7 +324,7 @@ async fn update(
         std::process::exit(0);
     }
 
-    let old_files = [".sha-sums", ".iw4xrevision"];
+    let old_files = [".sha-sums"];
     for f in old_files {
         if dir.join(f).exists() {
             match fs::remove_file(dir.join(f)) {
