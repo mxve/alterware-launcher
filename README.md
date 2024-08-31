@@ -14,10 +14,17 @@
 
 ## Installation
 
-1. Download the game from [Steam](https://store.steampowered.com/)
-2. Download the [latest alterware-launcher.exe](https://github.com/mxve/alterware-launcher/releases/latest/download/alterware-launcher.exe)
-3. Place alterware-launcher.exe in the game directory
-4. Run alterware-launcher.exe, after updating the game will launch automatically
+### Windows
+
+1. Download the game from [Steam](https://store.steampowered.com/).
+2. Download the [latest alterware-launcher.exe](https://github.com/mxve/alterware-launcher/releases/latest/download/alterware-launcher.exe).
+3. Place `alterware-launcher.exe` in the game directory.
+4. Run `alterware-launcher.exe`. After updating, the game will launch automatically.
+
+### Debian/Ubuntu
+
+1. Follow the instructions provided in this [forum post](https://forum.alterware.dev/t/linux-debian-ubuntu-amd64-arm64-install-the-alterware-launcher-using-our-apt-repository/1117) to install the alterware-launcher using our self-hosted APT repository.
+2. Once installed, run the launcher to automatically download the client files. For updates, use the terminal with the `--update` command line argument.
 
 ---
 
