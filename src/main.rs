@@ -13,7 +13,7 @@ use structs::*;
 #[macro_use]
 extern crate simple_log;
 
-use colored::*;
+use colored::Colorize;
 use indicatif::ProgressBar;
 #[cfg(windows)]
 use mslnk::ShellLink;

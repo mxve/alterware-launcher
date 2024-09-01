@@ -1,18 +1,18 @@
 use indicatif::{ProgressBar, ProgressStyle};
 use std::{
-    fs::{self, OpenOptions},
-    io::Write,
-    path::Path,
+    fs::{self, File},
+    io::Read,
+    path::{Path, PathBuf},
 };
 
 use crate::{global, structs};
 
-pub fn file_blake3(file: &std::path::Path) -> std::io::Result<String> {
+pub fn file_blake3(file: &Path) -> std::io::Result<String> {
     let mut blake3 = blake3::Hasher::new();
-    let mut file = std::fs::File::open(file)?;
+    let mut file = File::open(file)?;
     let mut buffer = [0; 1024];
     loop {
-        let n = std::io::Read::read(&mut file, &mut buffer)?;
+        let n = file.read(&mut buffer)?;
         if n == 0 {
             break;
         }
@@ -52,14 +52,14 @@ pub fn human_readable_bytes(bytes: u64) -> String {
 }
 
 pub fn pb_style_download(pb: &ProgressBar, state: bool) {
-    if state {
-        pb.set_style(
-            ProgressStyle::with_template("{spinner:.magenta} {msg:.magenta} > {bytes}/{total_bytes} | {bytes_per_sec} | {eta}")
-                .unwrap(),
-        );
+    let style = if state {
+        ProgressStyle::with_template(
+            "{spinner:.magenta} {msg:.magenta} > {bytes}/{total_bytes} | {bytes_per_sec} | {eta}",
+        )
     } else {
-        pb.set_style(ProgressStyle::with_template("{spinner:.magenta} {msg}").unwrap());
-    }
+        ProgressStyle::with_template("{spinner:.magenta} {msg}")
+    };
+    pb.set_style(style.unwrap());
 }
 
 pub fn cute_path(path: &Path) -> String {
@@ -68,15 +68,16 @@ pub fn cute_path(path: &Path) -> String {
 
 #[cfg(unix)]
 pub fn is_program_in_path(program: &str) -> bool {
-    if let Ok(path) = std::env::var("PATH") {
-        for p in path.split(':') {
-            let p_str = format!("{p}/{program}");
-            if fs::metadata(p_str).is_ok() {
-                return true;
-            }
-        }
-    }
-    false
+    std::env::var_os("PATH")
+        .map(|paths| {
+            paths.to_str().map(|paths| {
+                paths
+                    .split(':')
+                    .any(|dir| fs::metadata(format!("{}/{}", dir, program)).is_ok())
+            })
+        })
+        .flatten()
+        .unwrap_or(false)
 }
 
 #[macro_export]
@@ -99,22 +100,20 @@ macro_rules! println_error {
 fn install_dependency(path: &Path, args: &[&str]) {
     if path.exists() {
         match runas::Command::new(path).args(args).status() {
+            Ok(status) if status.success() || matches!(status.code(), Some(1638) | Some(3010)) => {
+                info!("{} installed successfully", path.display());
+            }
             Ok(status) => {
-                if !status.success() && !matches!(status.code(), Some(1638) | Some(3010)) {
-                    println_error!("Error installing dependency {}, {status}", path.display());
-                } else {
-                    info!("{} installed successfully", path.display());
-                }
+                println_error!("Error installing dependency {}, {status}", path.display());
+            }
+            Err(e) if e.raw_os_error() == Some(740) => {
+                println_error!(
+                    "Error: Process requires elevation. Please run the launcher as administrator or install {} manually",
+                    path.display()
+                );
             }
             Err(e) => {
-                if let Some(740) = e.raw_os_error() {
-                    println_error!(
-                        "Error: Process requires elevation. Please run the launcher as administrator or install {} manually",
-                        path.display()
-                    );
-                } else {
-                    println_error!("Error running file {}: {e}", path.display());
-                }
+                println_error!("Error running file {}: {e}", path.display());
             }
         }
     } else {
@@ -127,17 +126,17 @@ async fn download_and_install_dependency(url: &str, path: &Path, args: &[&str]) 
     if !path.exists() {
         info!("Downloading {} from {url}", path.display());
         if let Some(parent) = path.parent() {
-            match fs::create_dir_all(parent) {
-                Ok(_) => (),
-                Err(e) => {
-                    println_error!("Error creating directory {}: {e}", parent.display());
-                    return;
-                }
+            if let Err(e) = fs::create_dir_all(parent) {
+                println_error!("Error creating directory {}: {e}", parent.display());
+                return;
             }
         }
-        match crate::http_async::download_file(url, &std::path::PathBuf::from(path)).await {
+        match crate::http_async::download_file(url, &PathBuf::from(path)).await {
             Ok(_) => info!("Downloaded {}", path.display()),
-            Err(e) => println_error!("Error downloading {}: {e}", path.display()),
+            Err(e) => {
+                println_error!("Error downloading {}: {e}", path.display());
+                return;
+            }
         }
     }
     install_dependency(path, args);
@@ -170,29 +169,19 @@ pub fn prefix(tag_name: &str) -> String {
 }
 
 pub fn get_cache(dir: &Path) -> structs::Cache {
-    let mut cache_file = OpenOptions::new()
-        .read(true)
-        .create(true)
-        .append(true)
-        .open(dir.join("awcache.json"))
-        .unwrap();
-    let mut cache_s = String::new();
-    std::io::Read::read_to_string(&mut cache_file, &mut cache_s).unwrap();
-    let cache: structs::Cache = if cache_s.trim().is_empty() {
+    let cache_path = dir.join("awcache.json");
+    let cache_content = fs::read_to_string(cache_path).unwrap_or_default();
+    if cache_content.trim().is_empty() {
         structs::Cache::default()
     } else {
-        serde_json::from_str(&cache_s).unwrap_or(structs::Cache::default())
-    };
-    cache
+        serde_json::from_str(&cache_content).unwrap_or_default()
+    }
 }
 
 pub fn save_cache(dir: &Path, cache: structs::Cache) {
-    let mut cache_file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .open(dir.join("awcache.json"))
-        .unwrap();
+    let cache_path = dir.join("awcache.json");
     let cache_serialized = serde_json::to_string_pretty(&cache).unwrap();
-    cache_file.write_all(cache_serialized.as_bytes()).unwrap();
+    fs::write(cache_path, cache_serialized).unwrap_or_else(|e| {
+        println_error!("Failed to save cache: {}", e);
+    });
 }

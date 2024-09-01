@@ -1,4 +1,4 @@
-use colored::*;
+use colored::ColoredString;
 use std::{collections::HashMap, path::Path};
 
 #[derive(serde::Deserialize, serde::Serialize, Clone)]
