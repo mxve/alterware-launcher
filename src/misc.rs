@@ -2,7 +2,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use std::{
     fs::{self, File},
     io::Read,
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use crate::{global, structs};
@@ -131,7 +131,7 @@ async fn download_and_install_dependency(url: &str, path: &Path, args: &[&str]) 
                 return;
             }
         }
-        match crate::http_async::download_file(url, &PathBuf::from(path)).await {
+        match crate::http_async::download_file(url, &std::path::PathBuf::from(path)).await {
             Ok(_) => info!("Downloaded {}", path.display()),
             Err(e) => {
                 println_error!("Error downloading {}: {e}", path.display());
