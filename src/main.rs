@@ -7,6 +7,9 @@ mod misc;
 mod self_update;
 mod structs;
 
+#[cfg(test)]
+mod tests;
+
 use global::*;
 use structs::*;
 

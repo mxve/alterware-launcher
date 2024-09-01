@@ -43,12 +43,12 @@ pub fn fatal_error(error: &str) {
 pub fn human_readable_bytes(bytes: u64) -> String {
     let mut bytes = bytes as f64;
     let mut i = 0;
-    let units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-    while bytes > 1024.0 {
+    const UNITS: [&str; 9] = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+    while bytes >= 1024.0 {
         bytes /= 1024.0;
         i += 1;
     }
-    format!("{bytes:.2}{}", units[i])
+    format!("{bytes:.2}{}", UNITS[i])
 }
 
 pub fn pb_style_download(pb: &ProgressBar, state: bool) {

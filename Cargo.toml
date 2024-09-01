@@ -37,6 +37,10 @@ runas = "1.2.0"
 winresource = "0.1.17"
 static_vcruntime = "2.0"
 
+[dev-dependencies]
+strip-ansi-escapes = "0.2.0"
+serial_test = "3.1.1"
+
 [package.metadata.winresource]
 OriginalFilename = "alterware-launcher.exe"
 FileDescription = "AlterWare Launcher"

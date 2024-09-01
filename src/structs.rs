@@ -32,7 +32,7 @@ impl<'a> Game<'a> {
     }
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(serde::Deserialize, serde::Serialize, PartialEq, Debug, Clone)]
 pub struct Config {
     pub update_only: bool,
     pub skip_self_update: bool,
@@ -75,7 +75,7 @@ impl PrintPrefix {
     }
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Default)]
+#[derive(serde::Deserialize, serde::Serialize, Default, PartialEq, Debug, Clone)]
 pub struct Cache {
     pub iw4x_revision: String,
     pub hashes: HashMap<String, String>,
