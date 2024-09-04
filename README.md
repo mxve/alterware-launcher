@@ -24,7 +24,7 @@
 ### Debian/Ubuntu
 
 1. Follow the instructions provided in this [forum post](https://forum.alterware.dev/t/linux-debian-ubuntu-amd64-arm64-install-the-alterware-launcher-using-our-apt-repository/1117) to install the alterware-launcher using our self-hosted APT repository.
-2. Once installed, run the launcher from your game directory to automatically download the client files. For client updates, use the launcher from the terminal with the `--update` command line argument.
+2. Once installed, run the launcher from your game directory to automatically download the client files. For client updates, use the launcher from the terminal with the --update command-line argument as explained in this [guide](https://forum.alterware.dev/t/all-clients-useful-info-for-running-our-mods-under-linux/343).
 
 ---
 
