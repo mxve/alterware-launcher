@@ -35,7 +35,7 @@
 
 1. Consult the Steam documentation to learn how to download the game from their servers.
 2. Visit the [latest release](https://github.com/mxve/alterware-launcher/releases/latest) page for the AlterWare launcher and choose the release that matches your system requirements.
-3. Once installed, run the launcher from your game directory to download the client files. For client updates, use the launcher from the terminal with the `--update` command-line argument as explained in this [guide](https://forum.alterware.dev/t/all-clients-useful-info-for-running-our-mods-under-linux/343).
+3. Once installed, run the launcher from your game directory to download the client files automatically. For client updates, use the launcher from the terminal with the `--update` command-line argument as explained in this [guide](https://forum.alterware.dev/t/all-clients-useful-info-for-running-our-mods-under-linux/343).
 
 ### macOS
 
