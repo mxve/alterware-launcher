@@ -30,12 +30,6 @@
 ## 📦 Installation
 [**Windows**](#-windows) | [**Debian/Ubuntu**](#-debianubuntu-amd64arm64) | [**Other Linux OS**](#-other-linux-os) | [**macOS**](#-macos)
 
-
-> [!IMPORTANT]
-> ### Information for server owners:
-> On Windows the launcher self-updates and restarts by spawning a new console.
-> For automated processes, use `--skip-launcher-update` and manually download the latest launcher from [here](https://github.com/mxve/alterware-launcher/releases/latest/download/alterware-launcher.exe).
-
 ---
 
 ### 🪟 Windows
@@ -49,6 +43,11 @@
 > [!NOTE]
 > Windows 7 is no longer supported. [v0.6.12](https://github.com/mxve/alterware-launcher/releases/tag/v0.6.12) is the last version that will run on Windows 7.
 > To keep using it set `"skip_self_update": true` in the `alterware-launcher.json` config file.
+
+> [!IMPORTANT]
+> ### Information for server owners:
+> On Windows the launcher self-updates and restarts by spawning a new console.
+> For automated processes, use `--skip-launcher-update` and manually download the latest launcher from [here](https://github.com/mxve/alterware-launcher/releases/latest/download/alterware-launcher.exe).
 
 ---
 
