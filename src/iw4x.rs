@@ -9,10 +9,10 @@ use std::fs;
 use std::path::Path;
 
 pub async fn remote_revision() -> u16 {
-    match github::latest_tag(GH_IW4X_OWNER, GH_IW4X_OWNER).await {
+    match github::latest_tag(GH_IW4X_OWNER, GH_IW4X_REPO).await {
         Ok(tag) => misc::rev_to_int(&tag),
         Err(_) => {
-            crate::println_error!("Failed to get latest version for {GH_IW4X_OWNER}/{GH_IW4X_OWNER}, assuming we are up to date.");
+            crate::println_error!("Failed to get latest version for {GH_IW4X_OWNER}/{GH_IW4X_REPO}, assuming we are up to date.");
             0
         }
     }
