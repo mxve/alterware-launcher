@@ -9,12 +9,10 @@
 ![GitHub tag (with filter)](https://img.shields.io/github/v/tag/mxve/alterware-launcher?filter=!v*-pre&style=flat-square&label=Latest%20release&labelColor=F3F8FF&color=E26EE5) ![GitHub (Pre-)Release Date](https://img.shields.io/github/release-date-pre/mxve/alterware-launcher?style=flat-square&label=Release%20date&labelColor=F3F8FF&color=E26EE5) ![GitHub all releases](https://img.shields.io/github/downloads/mxve/alterware-launcher/total?style=flat-square&label=Total%20downloads&labelColor=F3F8FF&color=E26EE5)
 </div>
 
----
-
 > [!IMPORTANT]
 > **Only legitimate copies of the games are supported. If you don't own the game, please buy it.**
 
-## Table of Contents
+## 🗺️ Table of Contents
 
 <a href="https://alterware.dev"><img src=".github/images/logo.png" align="right" width="128" height="128"></a>
 

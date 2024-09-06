@@ -9,7 +9,13 @@ use std::fs;
 use std::path::Path;
 
 pub async fn remote_revision() -> u16 {
-    misc::rev_to_int(&github::latest_tag(GH_IW4X_OWNER, GH_IW4X_REPO).await)
+    match github::latest_tag(GH_IW4X_OWNER, GH_IW4X_OWNER).await {
+        Ok(tag) => misc::rev_to_int(&tag),
+        Err(_) => {
+            crate::println_error!("Failed to get latest version for {GH_IW4X_OWNER}/{GH_IW4X_OWNER}, assuming we are up to date.");
+            0
+        }
+    }
 }
 
 pub async fn update(dir: &Path, cache: &mut structs::Cache) {

@@ -680,7 +680,11 @@ async fn main() {
     let games_json =
         http_async::get_body_string(format!("{}/games.json", MASTER.lock().unwrap()).as_str())
             .await
-            .unwrap();
+            .unwrap_or_else(|error| {
+                crate::println_error!("Failed to get games.json: {:#?}", error);
+                misc::stdin();
+                std::process::exit(1);
+            });
     let games: Vec<Game> = serde_json::from_str(&games_json).unwrap_or_else(|error| {
         crate::println_error!("Error parsing games.json: {:#?}", error);
         misc::stdin();
