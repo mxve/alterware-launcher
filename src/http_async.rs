@@ -20,7 +20,7 @@ pub async fn download_file_progress(
         .get(url)
         .header(
             "User-Agent",
-            &format!(
+            format!(
                 "AlterWare Launcher | github.com/{}/{}",
                 crate::global::GH_OWNER,
                 crate::global::GH_REPO
@@ -28,10 +28,11 @@ pub async fn download_file_progress(
         )
         .send()
         .await
-        .or(Err(format!("Failed to GET from '{url}'")))?;
-    // Fix for CF shenanigans
+        .map_err(|_| format!("Failed to GET from '{url}'"))?;
+
     let total_size = res.content_length().unwrap_or(size);
     pb.set_length(total_size);
+
     let msg = format!(
         "{}{} ({})",
         misc::prefix("downloading"),
@@ -43,21 +44,17 @@ pub async fn download_file_progress(
     pb.set_message(path.file_name().unwrap().to_str().unwrap().to_string());
 
     let mut file =
-        File::create(path).or(Err(format!("Failed to create file '{}'", path.display())))?;
+        File::create(path).map_err(|_| format!("Failed to create file '{}'", path.display()))?;
     let mut downloaded: u64 = 0;
     let mut stream = res.bytes_stream();
 
     while let Some(item) = stream.next().await {
-        let chunk = match item {
-            Ok(v) => v,
-            Err(e) => return Err(format!("Error while downloading file: {e}")),
-        };
-        if let Err(e) = file.write_all(&chunk) {
-            Err(format!("Error while writing to file: {e}"))?
-        }
-        let new = min(downloaded + (chunk.len() as u64), total_size);
-        downloaded = new;
-        pb.set_position(new);
+        let chunk = item.map_err(|e| format!("Error while downloading file: {e}"))?;
+        file.write_all(&chunk)
+            .map_err(|e| format!("Error while writing to file: {e}"))?;
+
+        downloaded = min(downloaded + (chunk.len() as u64), total_size);
+        pb.set_position(downloaded);
     }
 
     pb.set_message(String::default());
@@ -65,40 +62,19 @@ pub async fn download_file_progress(
 }
 
 pub async fn download_file(url: &str, path: &PathBuf) -> Result<(), String> {
-    let client = Client::new();
-    match client
-        .get(url)
-        .header(
-            "User-Agent",
-            &format!(
-                "AlterWare Launcher | github.com/{}/{}",
-                crate::global::GH_OWNER,
-                crate::global::GH_REPO
-            ),
-        )
-        .send()
-        .await
-    {
-        Ok(res) => {
-            let body = res.bytes().await.or(Err("Failed to download file"))?;
-            let mut file = File::create(path).or(Err("Failed to create file"))?;
-            file.write_all(&body).or(Err("Failed to write to file"))?;
-            Ok(())
-        }
-        Err(e) => {
-            misc::fatal_error(&e.to_string());
-            Err("Could not download file".to_string())
-        }
-    }
+    let body = get_body(url).await?;
+    let mut file = File::create(path).or(Err("Failed to create file"))?;
+    file.write_all(&body).or(Err("Failed to write to file"))?;
+    Ok(())
 }
 
 pub async fn get_body(url: &str) -> Result<Vec<u8>, String> {
     let client = Client::new();
-    match client
+    let res = client
         .get(url)
         .header(
             "User-Agent",
-            &format!(
+            format!(
                 "AlterWare Launcher | github.com/{}/{}",
                 crate::global::GH_OWNER,
                 crate::global::GH_REPO
@@ -106,17 +82,14 @@ pub async fn get_body(url: &str) -> Result<Vec<u8>, String> {
         )
         .send()
         .await
-    {
-        Ok(res) => {
-            debug!("{} {url}", res.status().to_string());
-            let body = res.bytes().await.or(Err("Failed to get body"))?;
-            Ok(body.to_vec())
-        }
-        Err(e) => {
-            misc::fatal_error(&e.to_string());
-            Err("Could not get body".to_string())
-        }
-    }
+        .map_err(|e| format!("Failed to send request: {}", e))?;
+
+    debug!("{} {url}", res.status());
+
+    res.bytes()
+        .await
+        .map(|b| b.to_vec())
+        .map_err(|e| format!("Failed to get body: {}", e))
 }
 
 pub async fn get_body_string(url: &str) -> Result<String, String> {
