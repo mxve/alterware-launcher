@@ -42,41 +42,57 @@
 
 > [!NOTE]
 > Windows 7 is no longer supported. [v0.6.12](https://github.com/mxve/alterware-launcher/releases/tag/v0.6.12) is the last version that will run on Windows 7.
-> To keep using it set `"skip_self_update": true` in the `alterware-launcher.json` config file.
+> To keep using it, set `"skip_self_update": true` in the `alterware-launcher.json` config file.
 
 > [!IMPORTANT]
 > ### Information for server owners:
-> On Windows the launcher self-updates and restarts by spawning a new console.
+> On Windows, the launcher self-updates and restarts by spawning a new console.
 > For automated processes, use `--skip-launcher-update` and manually download the latest launcher from [here](https://github.com/mxve/alterware-launcher/releases/latest/download/alterware-launcher.exe).
 
 ---
 
 ### 🐧 Debian/Ubuntu (amd64/arm64)
 
-1. You can download the game from Steam using either [SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD) or the official Steam desktop app.
-2. Follow the instructions provided in this [forum post](https://forum.alterware.dev/t/linux-debian-ubuntu-amd64-arm64-install-the-alterware-launcher-using-our-apt-repository/1117) to install the alterware-launcher using our self-hosted APT repository.
-3. Once installed, run the launcher from your game directory to download the client files automatically. For updates, use the launcher from the terminal with the `--update` command-line argument as explained in [this guide](https://forum.alterware.dev/t/all-clients-useful-info-for-running-our-mods-under-linux/343).
+1. Download the game from Steam using either [SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD) or the official Steam desktop app.
+2. Follow the instructions provided in [this forum post](https://forum.alterware.dev/t/linux-debian-ubuntu-amd64-arm64-install-the-alterware-launcher-using-our-apt-repository/1117) to install the alterware-launcher using our self-hosted APT repository.
+3. Once installed, run the launcher from your game directory to download the client files automatically.
+
+> [!TIP]
+> Use the `--update` command-line argument if you want to launch the game through Proton or other Wine versions instead of the default wine found in your path.
 
 > [!NOTE]
 > The steps above can be used for any Debian-based distribution that uses the APT package manager.
+
+> [!NOTE]
+> For more information on how to run the launcher on Linux, see [this guide](https://forum.alterware.dev/t/all-clients-useful-info-for-running-our-mods-under-linux/343).
 
 ---
 
 ### 🐧 Other Linux OS
 
-1. Consult the Steam documentation to learn how to download the game from their servers.
-2. Visit the [latest release](https://github.com/mxve/alterware-launcher/releases/latest) page for the AlterWare launcher and choose the release that matches your system requirements.
-3. Once installed, run the launcher from your game directory to download the client files automatically. For updates, use the launcher from the terminal with the `--update` command-line argument as explained in [this guide](https://forum.alterware.dev/t/all-clients-useful-info-for-running-our-mods-under-linux/343).
+1. Download the game from Steam using either [SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD) or the official Steam desktop app.
+2. Download the [latest release](https://github.com/mxve/alterware-launcher/releases/latest) corresponding to your system architecture.
+    - Most likely you want [alterware-launcher-x86_64-unknown-linux-gnu.tar.gz](https://github.com/mxve/alterware-launcher/releases/latest/download/alterware-launcher-x86_64-unknown-linux-gnu.tar.gz)
+3. Unpack the archive and copy the `alterware-launcher` executable to your game directory.
+    - Alternatively, you can place it in your `PATH` so you can run it from anywhere. For example, in `/usr/local/bin/`
+4. Make the launcher executable: `chmod +x alterware-launcher`
+5. Run the launcher from your game directory to download the client files: `./alterware-launcher`
+
+> [!TIP]
+> Use the `--update` command-line argument if you want to launch the game through Proton or other Wine versions instead of the default wine found in your path.
+
+> [!NOTE]
+> For more information on how to run the launcher on Linux, see [this guide](https://forum.alterware.dev/t/all-clients-useful-info-for-running-our-mods-under-linux/343).
 
 ---
 
 ### 🍎 macOS
 
-1. You can download the game from Steam using either [SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD) or the official Steam desktop app.
+1. Download the game from Steam using either [SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD) or the official Steam desktop app.
 2. Download the [latest alterware-launcher](https://github.com/mxve/alterware-launcher/releases/latest/download/alterware-launcher-universal-apple-darwin.tar.gz).
 3. Once installed, run the launcher from your game directory to download the client files automatically. For updates, use the launcher from the terminal with the `--update` command-line argument as explained in [this guide](https://forum.alterware.dev/t/all-clients-useful-info-for-running-our-mods-under-linux/343).
 
-> [!WARNING]
+> [!CAUTION]
 > Running the AlterWare launcher on macOS has not been officially tested. However, since WINE has a macOS port, it should theoretically be possible to run our clients on this platform.
 
 ---
@@ -86,19 +102,19 @@
 > [!IMPORTANT]
 > **Only legitimate copies of the games are supported. If you don't own the game, please buy it.**
 
-> **IW4x**
+> **IW4x**  
 > Call of Duty: Modern Warfare 2 - Multiplayer
 
-> **IW4-SP**
+> **IW4-SP**  
 > Call of Duty: Modern Warfare 2 - Singeplayer
 
-> **IW5-Mod**
+> **IW5-Mod**  
 > Call of Duty: Modern Warfare 3 - Singleplayer, SpecOps
 
-> **IW6-Mod**
+> **IW6-Mod**  
 > Call of Duty: Ghosts
 
-> **S1-Mod**
+> **S1-Mod**  
 > Call of Duty: Advanced Warfare
 
 ---
