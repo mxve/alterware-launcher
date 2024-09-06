@@ -173,32 +173,7 @@ alterware-launcher.exe iw4x --bonus -u --path "C:\Games\IW4x" --pass "-console"
 
 ## 🔨 Building from Source
 
-### Prerequisites
-
-- [Rust](https://rustup.rs/) - Install the latest stable version
-- [Git](https://git-scm.com/) - For cloning the repository
-- [Perl](https://www.perl.org/get.html) - [Linux only]  Required for OpenSSL
-
-### Build Steps
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/mxve/alterware-launcher.git
-   cd alterware-launcher
-   ```
-
-2. Build the project:
-   ```bash
-   cargo build --release
-   ```
-
-3. Find the executable:
-   The compiled binary will be located at `target/release/alterware-launcher(.exe)`
-
-### Additional Notes
-
-- For debugging, you can use `cargo build` without the `--release` flag. The debug build will be slower but includes additional debugging information.
-- To run tests, use `cargo test`
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ---
 
