@@ -14,16 +14,16 @@
 > [!IMPORTANT]
 > **Only legitimate copies of the games are supported. If you don't own the game, please buy it.**
 
-## Navigation
+## Table of Contents
 
-<img src=".github/images/logo.png" align="right" width="128" height="128">
+<a href="https://alterware.dev"><img src=".github/images/logo.png" align="right" width="128" height="128"></a>
 
 - [Installation](#-installation)
-- [Support](#-support)
 - [Supported Games](#-supported-games)
 - [Command line arguments](#%EF%B8%8F-command-line-arguments)
 - [Config file](#-config-file-alterware-launcherjson)
 - [Building from Source](#-building-from-source)
+- [Support](#-support)
 
 ---
 
@@ -78,15 +78,6 @@
 
 > [!WARNING]
 > Running the AlterWare launcher on macOS has not been officially tested. However, since WINE has a macOS port, it should theoretically be possible to run our clients on this platform.
-
----
-
-## ❓ Support
-
-Need help or have questions? We're here to help you!
-
-- **AlterWare Forum**: Visit our [official forum](https://forum.alterware.dev/) for in-depth discussions, troubleshooting, and community support.
-- **Discord Community**: Join our [Discord server](https://discord.gg/2ETE8engZM) for real-time chat, quick questions, and to connect with other users.
 
 ---
 
@@ -166,16 +157,44 @@ alterware-launcher.exe iw4x --bonus -u --path "C:\Games\IW4x" --pass "-console"
 
 ## 🔨 Building from Source
 
-- [Install Rust](https://rustup.rs/)
-- [Linux/unix] Make sure perl is installed<sup>1</sup>
-- Clone the repository
-- Run ```cargo build --release```
-- The executable will be located in ```target/release```
+### Prerequisites
+
+- [Rust](https://rustup.rs/) - Install the latest stable version
+- [Git](https://git-scm.com/) - For cloning the repository
+- [Perl](https://www.perl.org/get.html) - [Linux only]  Required for OpenSSL
+
+### Build Steps
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/mxve/alterware-launcher.git
+   cd alterware-launcher
+   ```
+
+2. Build the project:
+   ```bash
+   cargo build --release
+   ```
+
+3. Find the executable:
+   The compiled binary will be located at `target/release/alterware-launcher(.exe)`
+
+### Additional Notes
+
+- For debugging, you can use `cargo build` without the `--release` flag. The debug build will be slower but includes additional debugging information.
+- To run tests, use `cargo test`
 
 ---
 
-<sup>1</sup> [Required for OpenSSL](https://docs.rs/openssl/latest/openssl/#vendored)
+## ❓ Support
+
+Need help or have questions? We're here to help you!
+
+- **AlterWare Forum**: Visit our [official forum](https://forum.alterware.dev/) for in-depth discussions, troubleshooting, and community support.
+- **Discord Community**: Join our [Discord server](https://discord.gg/2ETE8engZM) for real-time chat, quick questions, and to connect with other users.
+
+---
 
 <p align="center">
-<img src=".github/images/logotype.png" width="512">
+  <a href="https://alterware.dev"><img src=".github/images/logotype.png" width="512"></a>
 </p>
