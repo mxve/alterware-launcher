@@ -1,4 +1,5 @@
 mod config;
+mod extend;
 mod github;
 mod global;
 mod http_async;
@@ -10,6 +11,7 @@ mod structs;
 #[cfg(test)]
 mod tests;
 
+use extend::*;
 use global::*;
 use structs::*;
 
@@ -219,13 +221,13 @@ async fn update_dir(
             let hash_local = hashes
                 .get(file_name)
                 .map(Cow::Borrowed)
-                .unwrap_or_else(|| Cow::Owned(misc::file_blake3(&file_path).unwrap()))
+                .unwrap_or_else(|| Cow::Owned(file_path.get_blake3().unwrap()))
                 .to_string();
 
             if hash_local != hash_remote {
                 files_to_download.push(file.clone());
             } else {
-                let msg = format!("{}{}", misc::prefix("checked"), misc::cute_path(&file_path));
+                let msg = format!("{}{}", misc::prefix("checked"), file_path.cute_path());
                 pb.println(&msg);
                 info!("{msg}");
                 hashes.insert(file_name.to_owned(), file.blake3.to_lowercase());
@@ -288,7 +290,7 @@ async fn update_dir(
             download_complete = true;
         }
 
-        let hash = misc::file_blake3(&file_path).unwrap();
+        let hash = file_path.get_blake3().unwrap();
         hashes.insert(file_name.to_owned(), hash.to_lowercase());
         #[cfg(unix)]
         if file_name.ends_with(".exe") {
@@ -388,14 +390,14 @@ async fn update(
                         crate::println_info!(
                             "{}{}",
                             misc::prefix("removed"),
-                            misc::cute_path(&file_path)
+                            file_path.cute_path()
                         );
 
                         if fs::remove_file(&file_path).is_err() {
                             crate::println_error!(
                                 "{}Couldn't delete {}",
                                 misc::prefix("error"),
-                                misc::cute_path(&file_path)
+                                file_path.cute_path()
                             );
                         }
                     }
@@ -430,20 +432,20 @@ async fn update(
                 println!(
                     "{}Couldn't delete {}",
                     misc::prefix("error"),
-                    misc::cute_path(&file_path)
+                    file_path.cute_path()
                 );
             } else {
-                println!("{}{}", misc::prefix("removed"), misc::cute_path(&file_path));
+                println!("{}{}", misc::prefix("removed"), file_path.cute_path());
             }
         } else if file_path.is_dir() {
             if fs::remove_dir_all(&file_path).is_err() {
                 println!(
                     "{}Couldn't delete {}",
                     misc::prefix("error"),
-                    misc::cute_path(&file_path)
+                    file_path.cute_path()
                 );
             } else {
-                println!("{}{}", misc::prefix("removed"), misc::cute_path(&file_path));
+                println!("{}{}", misc::prefix("removed"), file_path.cute_path());
             }
         }
     }

@@ -49,7 +49,7 @@ mod config {
 }
 
 mod misc {
-    use crate::{fs, misc, structs};
+    use crate::{fs, misc, structs, Blake3Path};
     use std::{fs::File, io::Write, path::Path};
 
     #[test]
@@ -64,7 +64,7 @@ mod misc {
             .unwrap()
             .write_all(b"alterware")
             .unwrap();
-        let blake3 = misc::file_blake3(&path).unwrap();
+        let blake3 = path.get_blake3().unwrap();
         assert_eq!(
             blake3,
             "f18a70588a620f3a874120dbc2a41f49a0f44349c8a9c10c51f2f1c7bb678daa"

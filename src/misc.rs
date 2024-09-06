@@ -1,25 +1,8 @@
+use std::{fs, path::Path};
+
 use indicatif::{ProgressBar, ProgressStyle};
-use std::{
-    fs::{self, File},
-    io::Read,
-    path::Path,
-};
 
 use crate::{global, structs};
-
-pub fn file_blake3(file: &Path) -> std::io::Result<String> {
-    let mut blake3 = blake3::Hasher::new();
-    let mut file = File::open(file)?;
-    let mut buffer = [0; 1024];
-    loop {
-        let n = file.read(&mut buffer)?;
-        if n == 0 {
-            break;
-        }
-        blake3.update(&buffer[..n]);
-    }
-    Ok(blake3.finalize().to_string())
-}
 
 pub fn stdin() -> String {
     let mut input = String::new();
@@ -32,12 +15,6 @@ pub fn rev_to_int(rev: &str) -> u16 {
         .unwrap_or("0")
         .parse::<u16>()
         .unwrap_or(0)
-}
-
-pub fn fatal_error(error: &str) {
-    crate::println_error!("{}: {error}", prefix("error"));
-    stdin();
-    std::process::exit(1);
 }
 
 pub fn human_readable_bytes(bytes: u64) -> String {
@@ -60,10 +37,6 @@ pub fn pb_style_download(pb: &ProgressBar, state: bool) {
         ProgressStyle::with_template("{spinner:.magenta} {msg}")
     };
     pb.set_style(style.unwrap());
-}
-
-pub fn cute_path(path: &Path) -> String {
-    path.to_str().unwrap().replace('\\', "/")
 }
 
 #[cfg(unix)]

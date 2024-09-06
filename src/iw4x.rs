@@ -1,3 +1,4 @@
+use crate::extend::*;
 use crate::github;
 use crate::global::*;
 use crate::http_async;
@@ -24,7 +25,7 @@ pub async fn update(dir: &Path, cache: &mut structs::Cache) {
     println!(
         "{}{}",
         misc::prefix("downloading"),
-        misc::cute_path(&dir.join("iw4x.dll"))
+        dir.join("iw4x.dll").cute_path()
     );
     http_async::download_file(
         &format!(

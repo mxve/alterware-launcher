@@ -7,6 +7,7 @@ use futures_util::StreamExt;
 use indicatif::ProgressBar;
 use reqwest::Client;
 
+use crate::extend::*;
 use crate::misc;
 
 pub async fn download_file_progress(
@@ -36,7 +37,7 @@ pub async fn download_file_progress(
     let msg = format!(
         "{}{} ({})",
         misc::prefix("downloading"),
-        misc::cute_path(path),
+        path.cute_path(),
         misc::human_readable_bytes(total_size)
     );
     pb.println(&msg);
