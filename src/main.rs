@@ -278,13 +278,17 @@ async fn update_dir(
             )
             .await
             {
-                println!(
-                    "Failed to download file {}, retry? (Y/n)",
-                    file_path.clone().display()
-                );
+                let file_name = file_path.clone().cute_path();
+                println_error!("{err}");
+                println!("Failed to download file {file_name}, retry? (Y/n)");
                 let input = misc::stdin().to_ascii_lowercase();
                 if input == "n" {
+                    error!("Download for file {file_name} failed with {err}");
                     panic!("{err}");
+                } else {
+                    warn!(
+                        "Download for file {file_name} failed with {err} user chose to retry download"
+                    );
                 }
             };
             download_complete = true;
