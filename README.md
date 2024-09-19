@@ -129,7 +129,9 @@
 - ```--skip-launcher-update```
   - Skip updating the launcher
 - ```--bonus```
-  - Download bonus content
+  - Download bonus content (default)
+- ```--skip-bonus```
+  - Don't download bonus content
 - ```--force```, ```-f```
   - Force file hash recheck
 - ```--path```, ```-p```

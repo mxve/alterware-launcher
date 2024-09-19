@@ -53,8 +53,8 @@ impl Default for Config {
         Self {
             update_only: false,
             skip_self_update: false,
-            download_bonus_content: false,
-            ask_bonus_content: true,
+            download_bonus_content: true,
+            ask_bonus_content: false,
             force_update: false,
             args: String::default(),
             engine: String::default(),

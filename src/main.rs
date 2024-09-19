@@ -581,6 +581,7 @@ async fn main() {
         println!("    --path/-p <path>: Specify the game directory");
         println!("    --update/-u: Update only, don't launch the game");
         println!("    --bonus: Download bonus content");
+        println!("    --skip-bonus: Don't download bonus content");
         println!("    --force/-f: Force file hash recheck");
         println!("    --pass <args>: Pass arguments to the game");
         println!("    --skip-launcher-update: Skip launcher self-update");
@@ -647,6 +648,10 @@ async fn main() {
         cfg.download_bonus_content = true;
         cfg.ask_bonus_content = false;
         arg_remove(&mut args, "--bonus");
+    } else if arg_bool(&args, "--skip-bonus") {
+        cfg.download_bonus_content = false;
+        cfg.ask_bonus_content = false;
+        arg_remove(&mut args, "--skip-bonus")
     }
 
     if arg_bool(&args, "--force") || arg_bool(&args, "-f") {
