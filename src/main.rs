@@ -554,9 +554,13 @@ fn arg_remove_value(args: &mut Vec<String>, arg: &str) {
 
 #[tokio::main]
 async fn main() {
+    #[cfg(windows)]
     let log_file = env::current_exe()
         .unwrap_or(PathBuf::from("alterware-launcher"))
         .with_extension("log");
+    #[cfg(unix)]
+    let log_file = PathBuf::from("/var/log/alterware-launcher.log");
+
     if log_file.exists() && fs::remove_file(&log_file).is_err() {
         println!("Couldn't clear log file, make sure target directory is writable.");
     }
