@@ -267,16 +267,21 @@ async fn update_dir(
         }
 
         // Prompt user to retry downloads if they fail
-        let mut download_complete: bool = false;
+        let mut download_complete = false;
+        let mut bust_cache = false;
+        let mut local_hash = String::default();
         while !download_complete {
-            if let Err(err) = http_async::download_file_progress(
-                &client,
-                pb,
-                &format!("{}/{}", MASTER.lock().unwrap(), file.name),
-                &file_path,
-                file.size as u64,
-            )
-            .await
+            let url = format!("{}/{}", MASTER.lock().unwrap(), file.name);
+            let url = if bust_cache {
+                bust_cache = false;
+                format!("{}?{}", url, misc::random_string(6))
+            } else {
+                url
+            };
+
+            if let Err(err) =
+                http_async::download_file_progress(&client, pb, &url, &file_path, file.size as u64)
+                    .await
             {
                 let file_name = file_path.clone().cute_path();
                 println_error!("{err}");
@@ -291,11 +296,28 @@ async fn update_dir(
                     );
                 }
             };
+
+            local_hash = file_path.get_blake3().unwrap().to_lowercase();
+            let remote = file.blake3.to_lowercase();
+            if local_hash != remote {
+                println_error!("Downloaded file hash does not match remote!\nRemote {remote}, local {local_hash}, {}\nIf this issue persists please try again in 15 minutes.", file_path.cute_path());
+                println!("Retry download? (Y/n)");
+                let input = misc::stdin().to_ascii_lowercase();
+                if input != "n" {
+                    println_info!(
+                        "Retrying download for {} due to hash mismatch",
+                        file_path.cute_path()
+                    );
+                    bust_cache = true;
+                    continue;
+                }
+            }
+
             download_complete = true;
         }
 
-        let hash = file_path.get_blake3().unwrap();
-        hashes.insert(file_name.to_owned(), hash.to_lowercase());
+        hashes.insert(file_name.to_owned(), local_hash);
+
         #[cfg(unix)]
         if file_name.ends_with(".exe") {
             let perms = std::os::unix::fs::PermissionsExt::from_mode(0o755);
