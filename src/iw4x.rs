@@ -5,7 +5,6 @@ use crate::http_async;
 use crate::misc;
 use crate::structs;
 
-use std::fs;
 use std::path::Path;
 
 pub async fn remote_revision() -> u16 {
@@ -44,5 +43,4 @@ pub async fn update(dir: &Path, cache: &mut structs::Cache) {
     .unwrap();
 
     cache.iw4x_revision = format!("r{remote}");
-    fs::write(dir.join(".iw4xrevision"), &cache.iw4x_revision).unwrap();
 }
