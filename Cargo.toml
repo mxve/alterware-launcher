@@ -22,7 +22,7 @@ reqwest = { version = "0.12.7", features = ["stream"] }
 futures-util = "0.3.30"
 indicatif = "0.17.8"
 tokio = {version="1.40.0", features = ["rt-multi-thread", "macros"]}
-simple-log = "1.9.0"
+simple-log = "2.1.0"
 
 [target.'cfg(unix)'.dependencies]
 openssl = { version = "0.10.66", default-features = false, features = ["vendored"] }
