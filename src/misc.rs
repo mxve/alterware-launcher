@@ -42,14 +42,13 @@ pub fn pb_style_download(pb: &ProgressBar, state: bool) {
 #[cfg(unix)]
 pub fn is_program_in_path(program: &str) -> bool {
     std::env::var_os("PATH")
-        .map(|paths| {
+        .and_then(|paths| {
             paths.to_str().map(|paths| {
                 paths
                     .split(':')
                     .any(|dir| fs::metadata(format!("{}/{}", dir, program)).is_ok())
             })
         })
-        .flatten()
         .unwrap_or(false)
 }
 
