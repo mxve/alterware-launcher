@@ -589,7 +589,8 @@ async fn main() {
     let logger_config = LogConfigBuilder::builder()
         .path(log_file.to_str().unwrap())
         .time_format("%Y-%m-%d %H:%M:%S.%f")
-        .level("debug").unwrap()
+        .level("debug")
+        .unwrap()
         .output_file()
         .build();
     let _ = simple_log::new(logger_config);
