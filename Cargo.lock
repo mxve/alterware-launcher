@@ -41,7 +41,6 @@ dependencies = [
  "steamlocate",
  "strip-ansi-escapes",
  "tokio",
- "ureq",
  "winresource",
 ]
 
@@ -1300,9 +1299,7 @@ version = "0.23.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "934b404430bb06b3fae2cba809eb45a1ab1aecd64491213d7c3301b88393f8d1"
 dependencies = [
- "log",
  "once_cell",
- "ring",
  "rustls-pki-types",
  "rustls-webpki",
  "subtle",
@@ -1896,22 +1893,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
-name = "ureq"
-version = "2.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b74fc6b57825be3373f7054754755f03ac3a8f5d70015ccad699ba2029956f4a"
-dependencies = [
- "base64",
- "flate2",
- "log",
- "once_cell",
- "rustls",
- "rustls-pki-types",
- "url",
- "webpki-roots",
-]
-
-[[package]]
 name = "url"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2062,15 +2043,6 @@ checksum = "58cd2333b6e0be7a39605f0e255892fd7418a682d8da8fe042fe25128794d2ed"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "webpki-roots"
-version = "0.26.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d642ff16b7e79272ae451b7322067cdc17cadf68c23264be9d94a32319efe7e"
-dependencies = [
- "rustls-pki-types",
 ]
 
 [[package]]
