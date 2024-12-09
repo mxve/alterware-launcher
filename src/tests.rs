@@ -104,11 +104,42 @@ mod misc {
             hashes: [("test".to_string(), "hash".to_string())]
                 .into_iter()
                 .collect(),
+            stored_data: None,
         };
         misc::save_cache(path, test_cache.clone());
         let loaded_cache = misc::get_cache(path);
         assert_eq!(loaded_cache, test_cache);
 
         fs::remove_file(&cache_file).unwrap();
+    }
+}
+
+mod stored_data {
+    use crate::{fs, global, structs::StoredGameData};
+    use serial_test::serial;
+    use std::{collections::HashMap, path::Path};
+
+    #[test]
+    #[serial]
+    fn stored_game_data() {
+        let test_path = "test/path";
+        let mut test_clients = HashMap::new();
+        test_clients.insert("iw4".to_string(), vec!["iw4x".to_string()]);
+
+        let data = StoredGameData {
+            game_path: test_path.to_string(),
+            clients: test_clients,
+        };
+
+        let path = Path::new("tests_tmp");
+        fs::create_dir_all(path).unwrap();
+
+        global::store_game_data(&data).unwrap();
+        let loaded = global::get_stored_data().unwrap();
+
+        assert_eq!(data.game_path, loaded.game_path);
+        assert_eq!(data.clients, loaded.clients);
+
+        fs::remove_dir_all(path).unwrap();
     }
 }

@@ -17,6 +17,8 @@ pub async fn download_file_progress(
     path: &PathBuf,
     size: u64,
 ) -> Result<(), String> {
+    debug!("Starting download: {} -> {}", url, path.display());
+
     let res = client
         .get(url)
         .header(
@@ -29,9 +31,13 @@ pub async fn download_file_progress(
         )
         .send()
         .await
-        .map_err(|_| format!("Failed to GET from '{url}'"))?;
+        .map_err(|e| {
+            error!("Failed to GET from '{}': {}", url, e);
+            format!("Failed to GET from '{url}'")
+        })?;
 
     let total_size = res.content_length().unwrap_or(size);
+    debug!("Download size: {}", misc::human_readable_bytes(total_size));
     pb.set_length(total_size);
 
     let msg = format!(

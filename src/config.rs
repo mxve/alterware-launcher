@@ -3,11 +3,17 @@ use crate::structs::Config;
 use std::{fs, path::PathBuf};
 
 pub fn load(config_path: PathBuf) -> Config {
+    debug!("Loading config from: {}", config_path.display());
     if config_path.exists() {
         let cfg = fs::read_to_string(&config_path).unwrap();
-        let cfg: Config = serde_json::from_str(&cfg).unwrap_or(Config::default());
+        let cfg: Config = serde_json::from_str(&cfg).unwrap_or_else(|e| {
+            warn!("Failed to parse config file: {}", e);
+            Config::default()
+        });
+        debug!("Loaded config: {:?}", cfg);
         return cfg;
     }
+    info!("No config file found, creating default config");
     save(config_path.clone(), Config::default());
     Config::default()
 }

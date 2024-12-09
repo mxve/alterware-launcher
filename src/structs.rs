@@ -75,8 +75,17 @@ impl PrintPrefix {
     }
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Default, PartialEq, Debug, Clone)]
+#[derive(serde::Deserialize, serde::Serialize, Default, Debug, Clone, PartialEq)]
 pub struct Cache {
     pub iw4x_revision: String,
     pub hashes: HashMap<String, String>,
+    #[serde(default)]
+    pub stored_data: Option<StoredGameData>,
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Default, Debug, Clone, PartialEq)]
+pub struct StoredGameData {
+    pub game_path: String,
+    #[serde(default)]
+    pub clients: HashMap<String, Vec<String>>,
 }

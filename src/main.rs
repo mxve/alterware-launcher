@@ -337,6 +337,10 @@ async fn update(
     skip_iw4x_sp: Option<bool>,
     ignore_required_files: Option<bool>,
 ) {
+    info!("Starting update for game engine: {}", game.engine);
+    info!("Update path: {}", dir.display());
+    debug!("Bonus content: {}, Force update: {}", bonus_content, force);
+
     let skip_iw4x_sp = skip_iw4x_sp.unwrap_or(false);
     let ignore_required_files = ignore_required_files.unwrap_or(false);
 
@@ -344,9 +348,11 @@ async fn update(
         http_async::get_body_string(format!("{}/files.json", MASTER.lock().unwrap()).as_str())
             .await
             .unwrap();
+    debug!("Retrieved files.json from server");
     let cdn_info: Vec<CdnFile> = serde_json::from_str(&res).unwrap();
 
     if !ignore_required_files && !game.required_files_exist(dir) {
+        error!("Critical game files missing. Required files check failed.");
         println!(
             "{}\nVerify game file integrity on Steam or reinstall the game.",
             "Critical game files missing.".bright_red()
@@ -477,10 +483,33 @@ async fn update(
     }
 
     misc::save_cache(dir, cache);
+
+    // Store game data for offline mode
+    let mut stored_data = global::get_stored_data().unwrap_or_default();
+    stored_data.game_path = dir.to_string_lossy().into_owned();
+
+    // Store available clients for this engine
+    stored_data.clients.insert(
+        game.engine.to_string(),
+        game.client.iter().map(|s| s.to_string()).collect(),
+    );
+
+    if let Err(e) = global::store_game_data(&stored_data) {
+        println!(
+            "{} Failed to store game data: {}",
+            PREFIXES.get("error").unwrap().formatted(),
+            e
+        );
+    }
 }
 
 #[cfg(windows)]
 fn launch(file_path: &PathBuf, args: &str) {
+    info!(
+        "Launching game on Windows: {} {}",
+        file_path.display(),
+        args
+    );
     println!("\n\nJoin the AlterWare Discord server:\nhttps://discord.gg/2ETE8engZM\n\n");
     crate::println_info!("Launching {} {args}", file_path.display());
     let exit_status = std::process::Command::new(file_path)
@@ -490,6 +519,12 @@ fn launch(file_path: &PathBuf, args: &str) {
         .expect("Failed to launch the game")
         .wait()
         .expect("Failed to wait for the game process to finish");
+
+    if exit_status.success() {
+        info!("Game exited successfully with status: {}", exit_status);
+    } else {
+        error!("Game exited with error status: {}", exit_status);
+    }
 
     crate::println_error!("Game exited with {exit_status}");
     if !exit_status.success() {
@@ -638,6 +673,90 @@ async fn main() {
             "mxve".bright_magenta().on_black().underline(),
             ".de".on_black().underline()
         );
+        return;
+    }
+
+    let offline_mode = !global::check_connectivity().await;
+    if offline_mode {
+        // Check if this is a first-time run (no stored data)
+        let stored_data = global::get_stored_data();
+        if stored_data.is_none() {
+            println!(
+                "{} Internet connection is required for first-time installation.",
+                PREFIXES.get("error").unwrap().formatted()
+            );
+            error!("Internet connection required for first-time installation");
+            println!("Please connect to the internet and try again.");
+            println!("Press enter to exit...");
+            misc::stdin();
+            std::process::exit(1);
+        }
+
+        println!(
+            "{} No internet connection or MASTER server is unreachable. Running in offline mode...",
+            PREFIXES.get("error").unwrap().formatted()
+        );
+        warn!("No internet connection or MASTER server is unreachable. Running in offline mode...");
+
+        // Handle path the same way as online mode
+        let install_path: PathBuf;
+        if let Some(path) = arg_value(&args, "--path") {
+            install_path = PathBuf::from(path);
+            arg_remove_value(&mut args, "--path");
+        } else if let Some(path) = arg_value(&args, "-p") {
+            install_path = PathBuf::from(path);
+            arg_remove_value(&mut args, "-p");
+        } else {
+            install_path = env::current_dir().unwrap();
+        }
+
+        let cfg = config::load(install_path.join("alterware-launcher.json"));
+
+        // Try to get stored game data
+        let stored_data = global::get_stored_data();
+        if let Some(ref data) = stored_data {
+            info!("Found stored game data for path: {}", data.game_path);
+        } else {
+            warn!("No stored game data found");
+        }
+
+        // Get client from args, config, or prompt user
+        let client = if args.len() > 1 {
+            args[1].clone()
+        } else if let Some(engine) = stored_data
+            .as_ref()
+            .and_then(|d| d.clients.get(&cfg.engine))
+        {
+            if engine.len() > 1 {
+                println!("Multiple clients available, select one to launch:");
+                for (i, c) in engine.iter().enumerate() {
+                    println!("{i}: {c}");
+                }
+                info!("Multiple clients available, prompting user for selection");
+                engine[misc::stdin().parse::<usize>().unwrap()].clone()
+            } else if !engine.is_empty() {
+                info!("Using single available client: {}", engine[0]);
+                engine[0].clone()
+            } else {
+                println!(
+                    "{} No client specified and no stored clients available.",
+                    PREFIXES.get("error").unwrap().formatted()
+                );
+                error!("No client specified and no stored clients available");
+                std::process::exit(1);
+            }
+        } else {
+            println!(
+                "{} No client specified and no stored data available.",
+                PREFIXES.get("error").unwrap().formatted()
+            );
+            error!("No client specified and no stored data available");
+            std::process::exit(1);
+        };
+
+        info!("Launching game in offline mode with client: {}", client);
+        // Launch game without updates
+        launch(&install_path.join(format!("{}.exe", client)), &cfg.args);
         return;
     }
 
@@ -812,6 +931,25 @@ async fn main() {
                 if !cfg.update_only {
                     launch(&install_path.join(format!("{c}.exe")), &cfg.args);
                 }
+
+                // Store game data for offline mode
+                let mut stored_data = global::get_stored_data().unwrap_or_default();
+                stored_data.game_path = install_path.to_string_lossy().into_owned();
+
+                // Store available clients for this engine
+                stored_data.clients.insert(
+                    g.engine.to_string(),
+                    g.client.iter().map(|s| s.to_string()).collect(),
+                );
+
+                if let Err(e) = global::store_game_data(&stored_data) {
+                    println!(
+                        "{} Failed to store game data: {}",
+                        PREFIXES.get("error").unwrap().formatted(),
+                        e
+                    );
+                }
+
                 return;
             }
         }
