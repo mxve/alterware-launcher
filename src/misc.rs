@@ -2,7 +2,7 @@ use std::{fs, path::Path};
 
 use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::{global, structs};
+use crate::global;
 
 pub fn stdin() -> String {
     let mut input = String::new();
@@ -138,24 +138,6 @@ pub fn prefix(tag_name: &str) -> String {
     global::PREFIXES
         .get(tag_name)
         .map_or_else(|| tag_name.to_string(), |tag| tag.formatted())
-}
-
-pub fn get_cache(dir: &Path) -> structs::Cache {
-    let cache_path = dir.join("awcache.json");
-    let cache_content = fs::read_to_string(cache_path).unwrap_or_default();
-    if cache_content.trim().is_empty() {
-        structs::Cache::default()
-    } else {
-        serde_json::from_str(&cache_content).unwrap_or_default()
-    }
-}
-
-pub fn save_cache(dir: &Path, cache: structs::Cache) {
-    let cache_path = dir.join("awcache.json");
-    let cache_serialized = serde_json::to_string_pretty(&cache).unwrap();
-    fs::write(cache_path, cache_serialized).unwrap_or_else(|e| {
-        println_error!("Failed to save cache: {}", e);
-    });
 }
 
 pub fn random_string(length: u32) -> String {

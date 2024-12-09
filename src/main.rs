@@ -1,3 +1,4 @@
+mod cache;
 mod config;
 mod extend;
 mod github;
@@ -376,7 +377,7 @@ async fn update(
     let mut cache = if force {
         structs::Cache::default()
     } else {
-        misc::get_cache(dir)
+        cache::get_cache(dir)
     };
 
     if game.engine == "iw4" {
@@ -482,10 +483,10 @@ async fn update(
         }
     }
 
-    misc::save_cache(dir, cache);
+    cache::save_cache(dir, cache);
 
     // Store game data for offline mode
-    let mut stored_data = global::get_stored_data().unwrap_or_default();
+    let mut stored_data = cache::get_stored_data().unwrap_or_default();
     stored_data.game_path = dir.to_string_lossy().into_owned();
 
     // Store available clients for this engine
@@ -494,7 +495,7 @@ async fn update(
         game.client.iter().map(|s| s.to_string()).collect(),
     );
 
-    if let Err(e) = global::store_game_data(&stored_data) {
+    if let Err(e) = cache::store_game_data(&stored_data) {
         println!(
             "{} Failed to store game data: {}",
             PREFIXES.get("error").unwrap().formatted(),
@@ -679,7 +680,7 @@ async fn main() {
     let offline_mode = !global::check_connectivity().await;
     if offline_mode {
         // Check if this is a first-time run (no stored data)
-        let stored_data = global::get_stored_data();
+        let stored_data = cache::get_stored_data();
         if stored_data.is_none() {
             println!(
                 "{} Internet connection is required for first-time installation.",
@@ -713,7 +714,7 @@ async fn main() {
         let cfg = config::load(install_path.join("alterware-launcher.json"));
 
         // Try to get stored game data
-        let stored_data = global::get_stored_data();
+        let stored_data = cache::get_stored_data();
         if let Some(ref data) = stored_data {
             info!("Found stored game data for path: {}", data.game_path);
         } else {
@@ -933,7 +934,7 @@ async fn main() {
                 }
 
                 // Store game data for offline mode
-                let mut stored_data = global::get_stored_data().unwrap_or_default();
+                let mut stored_data = cache::get_stored_data().unwrap_or_default();
                 stored_data.game_path = install_path.to_string_lossy().into_owned();
 
                 // Store available clients for this engine
@@ -942,7 +943,7 @@ async fn main() {
                     g.client.iter().map(|s| s.to_string()).collect(),
                 );
 
-                if let Err(e) = global::store_game_data(&stored_data) {
+                if let Err(e) = cache::store_game_data(&stored_data) {
                     println!(
                         "{} Failed to store game data: {}",
                         PREFIXES.get("error").unwrap().formatted(),

@@ -1,5 +1,4 @@
-use crate::misc;
-use crate::structs::{PrintPrefix, StoredGameData};
+use crate::structs::PrintPrefix;
 use colored::Colorize;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
@@ -65,18 +64,4 @@ pub async fn check_connectivity() -> bool {
             false
         }
     }
-}
-
-pub fn get_stored_data() -> Option<StoredGameData> {
-    let dir = std::env::current_dir().ok()?;
-    let cache = misc::get_cache(&dir);
-    cache.stored_data
-}
-
-pub fn store_game_data(data: &StoredGameData) -> Result<(), Box<dyn std::error::Error>> {
-    let dir = std::env::current_dir()?;
-    let mut cache = misc::get_cache(&dir);
-    cache.stored_data = Some((*data).clone());
-    misc::save_cache(&dir, cache);
-    Ok(())
 }

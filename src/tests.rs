@@ -49,7 +49,7 @@ mod config {
 }
 
 mod misc {
-    use crate::{fs, misc, structs, Blake3Path};
+    use crate::{cache, fs, misc, structs, Blake3Path};
     use std::{fs::File, io::Write, path::Path};
 
     #[test]
@@ -95,7 +95,7 @@ mod misc {
         let cache_file = path.join("awcache.json");
 
         // Test initial empty cache
-        let initial_cache = misc::get_cache(path);
+        let initial_cache = cache::get_cache(path);
         assert_eq!(initial_cache, structs::Cache::default());
 
         // Test saving and loading cache
@@ -106,8 +106,8 @@ mod misc {
                 .collect(),
             stored_data: None,
         };
-        misc::save_cache(path, test_cache.clone());
-        let loaded_cache = misc::get_cache(path);
+        cache::save_cache(path, test_cache.clone());
+        let loaded_cache = cache::get_cache(path);
         assert_eq!(loaded_cache, test_cache);
 
         fs::remove_file(&cache_file).unwrap();
@@ -115,7 +115,7 @@ mod misc {
 }
 
 mod stored_data {
-    use crate::{fs, global, structs::StoredGameData};
+    use crate::{cache, fs, structs::StoredGameData};
     use serial_test::serial;
     use std::{collections::HashMap, path::Path};
 
@@ -134,8 +134,8 @@ mod stored_data {
         let path = Path::new("tests_tmp");
         fs::create_dir_all(path).unwrap();
 
-        global::store_game_data(&data).unwrap();
-        let loaded = global::get_stored_data().unwrap();
+        cache::store_game_data(&data).unwrap();
+        let loaded = cache::get_stored_data().unwrap();
 
         assert_eq!(data.game_path, loaded.game_path);
         assert_eq!(data.clients, loaded.clients);
