@@ -31,12 +31,6 @@ jobs:
             os: windows-latest
           - target: i686-pc-windows-msvc
             os: windows-latest
-          - target: x86_64-apple-darwin
-            os: macos-latest
-          - target: universal-apple-darwin
-            os: macos-latest
-          - target: aarch64-apple-darwin
-            os: macos-latest
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
