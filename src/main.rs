@@ -115,7 +115,7 @@ fn setup_desktop_links(path: &Path, game: &Game) {
 async fn auto_install(path: &Path, game: &Game<'_>) {
     setup_client_links(game, path);
     setup_desktop_links(path, game);
-    update(game, path, false, false, None, None).await;
+    update(game, path, false, false, None, None, None).await;
 }
 
 #[cfg(windows)]
@@ -337,6 +337,7 @@ async fn update(
     force: bool,
     skip_iw4x_sp: Option<bool>,
     ignore_required_files: Option<bool>,
+    prerelease: Option<bool>,
 ) {
     info!("Starting update for game engine: {}", game.engine);
     info!("Update path: {}", dir.display());
@@ -381,7 +382,7 @@ async fn update(
     };
 
     if game.engine == "iw4" {
-        iw4x::update(dir, &mut cache).await;
+        iw4x::update(dir, &mut cache, prerelease).await;
 
         let iw4x_dirs = vec!["iw4x", "zone/patch"];
         for d in &iw4x_dirs {
@@ -651,6 +652,7 @@ async fn main() {
         println!("    --ignore-required-files: Skip required files check");
         println!("    --skip-redist: Skip redistributable installation");
         println!("    --redist: (Re-)Install redistributables");
+        println!("    --prerelease: Update to prerelease version of clients and launcher");
         println!(
             "\nExample:\n    alterware-launcher.exe iw4x --bonus --pass \"-console -nointro\""
         );
@@ -779,8 +781,13 @@ async fn main() {
         *master_url = master_url.replace("https://", "http://");
     };
 
+    if arg_bool(&args, "--prerelease") {
+        cfg.prerelease = true;
+        arg_remove(&mut args, "--prerelease");
+    }
+
     if !arg_bool(&args, "--skip-launcher-update") && !cfg.skip_self_update {
-        self_update::run(cfg.update_only).await;
+        self_update::run(cfg.update_only, Some(cfg.prerelease)).await;
     } else {
         arg_remove(&mut args, "--skip-launcher-update");
     }
@@ -927,6 +934,7 @@ async fn main() {
                     cfg.force_update,
                     Some(&game != "iw4x-sp"),
                     Some(ignore_required_files),
+                    Some(cfg.prerelease),
                 )
                 .await;
                 if !cfg.update_only {

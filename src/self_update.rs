@@ -3,20 +3,33 @@ use crate::global::*;
 
 use semver::Version;
 
-pub async fn self_update_available() -> bool {
-    let current_version: Version = Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
-    let latest_version = github::latest_version(GH_OWNER, GH_REPO).await;
+pub async fn self_update_available(prerelease: Option<bool>) -> bool {
+    let current_version = match Version::parse(env!("CARGO_PKG_VERSION")) {
+        Ok(v) => v,
+        Err(e) => {
+            error!("Failed to parse current version: {}", e);
+            return false;
+        }
+    };
+
+    let latest_version = match github::latest_version(GH_OWNER, GH_REPO, prerelease).await {
+        Ok(v) => v,
+        Err(e) => {
+            error!("Failed to get latest version: {}", e);
+            return false;
+        }
+    };
 
     current_version < latest_version
 }
 
 #[cfg(not(windows))]
-pub async fn run(_update_only: bool) {
-    if self_update_available().await {
+pub async fn run(_update_only: bool, _prerelease: Option<bool>) {
+    if self_update_available(None).await {
         crate::println_info!("A new version of the AlterWare launcher is available.");
         crate::println_info!(
             "Download it at {}",
-            github::latest_release_url(GH_OWNER, GH_REPO)
+            github::download_url(GH_OWNER, GH_REPO, None)
         );
         println!("Launching in 10 seconds..");
         tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
@@ -37,7 +50,7 @@ pub fn restart() -> std::io::Error {
 }
 
 #[cfg(windows)]
-pub async fn run(update_only: bool) {
+pub async fn run(update_only: bool, prerelease: Option<bool>) {
     use std::{fs, path::PathBuf};
 
     use crate::http_async;
@@ -60,11 +73,11 @@ pub async fn run(update_only: bool) {
         }
     }
 
-    if self_update_available().await {
+    if self_update_available(prerelease).await {
         crate::println_info!("Performing launcher self-update.");
         println!(
             "If you run into any issues, please download the latest version at {}",
-            github::latest_release_url(GH_OWNER, GH_REPO)
+            github::download_url(GH_OWNER, GH_REPO, None)
         );
 
         let update_binary = PathBuf::from("alterware-launcher-update.exe");
@@ -83,7 +96,7 @@ pub async fn run(update_only: bool) {
         http_async::download_file(
             &format!(
                 "{}/download/{}",
-                github::latest_release_url(GH_OWNER, GH_REPO),
+                github::download_url(GH_OWNER, GH_REPO, None),
                 launcher_name
             ),
             &file_path,
