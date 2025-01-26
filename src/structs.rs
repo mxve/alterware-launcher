@@ -48,6 +48,8 @@ pub struct Config {
     pub skip_redist: bool,
     #[serde(default)]
     pub prerelease: bool,
+    #[serde(default)]
+    pub cdn_url: String,
 }
 
 impl Default for Config {
@@ -63,6 +65,7 @@ impl Default for Config {
             use_https: true,
             skip_redist: false,
             prerelease: false,
+            cdn_url: String::default(),
         }
     }
 }

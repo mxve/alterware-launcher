@@ -679,7 +679,32 @@ async fn main() {
         return;
     }
 
-    let offline_mode = !global::check_connectivity(None).await;
+    let install_path: PathBuf;
+    if let Some(path) = arg_value(&args, "--path") {
+        install_path = PathBuf::from(path);
+        arg_remove_value(&mut args, "--path");
+    } else if let Some(path) = arg_value(&args, "-p") {
+        install_path = PathBuf::from(path);
+        arg_remove_value(&mut args, "-p");
+    } else {
+        install_path = env::current_dir().unwrap();
+    }
+
+    let mut cfg = config::load(install_path.join("alterware-launcher.json"));
+
+    if arg_bool(&args, "--cdn-url") {
+        cfg.cdn_url = arg_value(&args, "--cdn-url").unwrap_or_default();
+        arg_remove_value(&mut args, "--cdn-url");
+    }
+
+    let initial_cdn = if !cfg.cdn_url.is_empty() {
+        info!("Using custom CDN URL: {}", cfg.cdn_url);
+        Some(cfg.cdn_url.clone())
+    } else {
+        None
+    };
+
+    let offline_mode = !global::check_connectivity(initial_cdn).await;
     if offline_mode {
         // Check if this is a first-time run (no stored data)
         let stored_data = cache::get_stored_data();
@@ -700,20 +725,6 @@ async fn main() {
             PREFIXES.get("error").unwrap().formatted()
         );
         warn!("No internet connection or MASTER server is unreachable. Running in offline mode...");
-
-        // Handle path the same way as online mode
-        let install_path: PathBuf;
-        if let Some(path) = arg_value(&args, "--path") {
-            install_path = PathBuf::from(path);
-            arg_remove_value(&mut args, "--path");
-        } else if let Some(path) = arg_value(&args, "-p") {
-            install_path = PathBuf::from(path);
-            arg_remove_value(&mut args, "-p");
-        } else {
-            install_path = env::current_dir().unwrap();
-        }
-
-        let cfg = config::load(install_path.join("alterware-launcher.json"));
 
         // Try to get stored game data
         let stored_data = cache::get_stored_data();
@@ -762,19 +773,6 @@ async fn main() {
         launch(&install_path.join(format!("{}.exe", client)), &cfg.args);
         return;
     }
-
-    let install_path: PathBuf;
-    if let Some(path) = arg_value(&args, "--path") {
-        install_path = PathBuf::from(path);
-        arg_remove_value(&mut args, "--path");
-    } else if let Some(path) = arg_value(&args, "-p") {
-        install_path = PathBuf::from(path);
-        arg_remove_value(&mut args, "-p");
-    } else {
-        install_path = env::current_dir().unwrap();
-    }
-
-    let mut cfg = config::load(install_path.join("alterware-launcher.json"));
 
     if !cfg.use_https {
         let mut master_url = MASTER_URL.lock().unwrap();

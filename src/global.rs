@@ -10,7 +10,7 @@ pub const GH_OWNER: &str = "mxve";
 pub const GH_REPO: &str = "alterware-launcher";
 pub const GH_IW4X_OWNER: &str = "iw4x";
 pub const GH_IW4X_REPO: &str = "iw4x-client";
-pub const DEFAULT_MASTER: &str = "https://cdn.alterware.ovh";
+pub const DEFAULT_MASTER: &str = "https://cdn.alterware.ov";
 pub const BACKUP_MASTER: &str = "https://cdn.iw4x.getserve.rs";
 
 pub static MASTER_URL: Lazy<Mutex<String>> = Lazy::new(|| {
@@ -63,11 +63,11 @@ pub fn check_connectivity(master_url: Option<String>) -> Pin<Box<dyn Future<Outp
     Box::pin(async move {
         let retry = master_url.is_some();
         if !retry {
-            *MASTER_URL.lock().unwrap() = String::from(DEFAULT_MASTER);
-            println!("Running connectivity check on default CDN");
+            println!("Running connectivity check on {}", DEFAULT_MASTER);
         } else {
-            *MASTER_URL.lock().unwrap() = String::from(BACKUP_MASTER);
-            println!("Running connectivity check on backup CDN");
+            let master = master_url.unwrap();
+            *MASTER_URL.lock().unwrap() = master.clone();
+            println!("Running connectivity check on {}", master);
         }
 
         let master_url = MASTER_URL.lock().unwrap().clone();
