@@ -272,7 +272,7 @@ async fn update_dir(
         let mut bust_cache = false;
         let mut local_hash = String::default();
         while !download_complete {
-            let url = format!("{}/{}", MASTER.lock().unwrap(), file.name);
+            let url = format!("{}/{}", MASTER_URL.lock().unwrap(), file.name);
             let url = if bust_cache {
                 bust_cache = false;
                 format!("{}?{}", url, misc::random_string(6))
@@ -347,7 +347,7 @@ async fn update(
     let ignore_required_files = ignore_required_files.unwrap_or(false);
 
     let res =
-        http_async::get_body_string(format!("{}/files.json", MASTER.lock().unwrap()).as_str())
+        http_async::get_body_string(format!("{}/files.json", MASTER_URL.lock().unwrap()).as_str())
             .await
             .unwrap();
     debug!("Retrieved files.json from server");
@@ -679,7 +679,7 @@ async fn main() {
         return;
     }
 
-    let offline_mode = !global::check_connectivity().await;
+    let offline_mode = !global::check_connectivity(None).await;
     if offline_mode {
         // Check if this is a first-time run (no stored data)
         let stored_data = cache::get_stored_data();
@@ -777,7 +777,7 @@ async fn main() {
     let mut cfg = config::load(install_path.join("alterware-launcher.json"));
 
     if !cfg.use_https {
-        let mut master_url = MASTER.lock().unwrap();
+        let mut master_url = MASTER_URL.lock().unwrap();
         *master_url = master_url.replace("https://", "http://");
     };
 
@@ -841,7 +841,7 @@ async fn main() {
     }
 
     let games_json =
-        http_async::get_body_string(format!("{}/games.json", MASTER.lock().unwrap()).as_str())
+        http_async::get_body_string(format!("{}/games.json", MASTER_URL.lock().unwrap()).as_str())
             .await
             .unwrap_or_else(|error| {
                 crate::println_error!("Failed to get games.json: {:#?}", error);
