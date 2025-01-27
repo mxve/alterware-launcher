@@ -6,6 +6,7 @@
       - `cdn_url/file_hash` `{ "name": "file/path/name.ext", "size": 123456, "hash": "file_hash" }`
     - [ ] cdn fallback
     - [ ] cdn url override
+    - [ ] info.json -> stable.json, unstable.json, all files (named as hash) in "files" dir
   - [ ] file download
     - [ ] http chunked transfer
     - [ ] resumable downloads

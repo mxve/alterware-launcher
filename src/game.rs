@@ -75,7 +75,7 @@ impl Game {
     }
 
     /// Check if any of the reference files exists in the given path
-    pub fn reference_files_exist(&self, path: &Path) -> bool {
+    pub fn reference_file_exist(&self, path: &Path) -> bool {
         self.reference_files()
             .iter()
             .any(|file| path.join(file).exists())
@@ -136,10 +136,5 @@ impl Client {
 
 /// Detect game in the given path
 pub fn detect_game(path: &Path) -> Option<Game> {
-    for game in Game::iter() {
-        if game.reference_files_exist(path) {
-            return Some(game);
-        }
-    }
-    None
+    Game::iter().find(|&game| game.reference_file_exist(path))
 }
