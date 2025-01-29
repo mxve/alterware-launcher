@@ -1,6 +1,7 @@
 #![allow(unused)]
 
 use once_cell::sync::Lazy;
+use once_cell::sync::OnceCell;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
@@ -9,10 +10,14 @@ pub const GITHUB_OWNER: &str = "mxve";
 /// The repository of the launcher
 pub const GITHUB_REPO: &str = "alterware-launcher";
 
+pub const CDN_HOSTS: [&str; 2] = ["test.test", "cdn.getserve.rs"];
+pub static CDN_PROTOCOL: OnceCell<Mutex<String>> = OnceCell::new();
+pub static CDN_BRANCH: OnceCell<Mutex<String>> = OnceCell::new();
+pub static CDN_HOST: OnceCell<Mutex<String>> = OnceCell::new();
 
-// TODO: Make this configurable
-/// Base URL for file downloads
-pub const CDN_URL: &str = "https://cdn.getserve.rs/stable";
+pub static GAME: OnceCell<Mutex<crate::game::Game>> = OnceCell::new();
+pub static GAME_DIR: OnceCell<Mutex<PathBuf>> = OnceCell::new();
+pub static GAME_CLIENT: OnceCell<Mutex<Option<crate::game::Client>>> = OnceCell::new();
 
 // TODO: Make this configurable
 /// The path to the download cache

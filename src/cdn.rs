@@ -1,4 +1,6 @@
-use crate::extend::*;
+use std::path::PathBuf;
+
+use crate::{extend::*, global, http, utils};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct File {
@@ -8,18 +10,22 @@ pub struct File {
 }
 
 impl File {
+    /// CDN URL for the file
     pub fn url(&self) -> String {
-        format!("{}/{}", crate::global::CDN_URL, self.hash)
+        format!("{}/{}", get_cdn_url(), self.hash)
     }
 
+    /// Temporary file name on disk, truncated to 24 characters to prevent MAX_PATH issues
     pub fn cache_name(&self) -> String {
-        format!("{}", self.hash[..24].to_string())
+        self.hash[..24].to_string()
     }
 
-    pub fn cache_path(&self) -> String {
-        format!("{}/{}", crate::global::CACHE_DIR, self.cache_name())
+    /// Temporary (full) file path for downloading
+    pub fn cache_path(&self) -> PathBuf {
+        format!("{}/{}", &global::CACHE_DIR, self.cache_name()).into()
     }
 
+    /// Human-readable file size
     pub fn size_human(&self) -> String {
         self.size.human_readable_size()
     }
@@ -31,11 +37,45 @@ pub struct Info {
     pub files: Vec<File>,
 }
 
-pub async fn get_info() -> Result<Info, Box<dyn std::error::Error>> {
-    let info = crate::http::quick_request(&format!("{0}/info.json", crate::global::CDN_URL)).await?;
-    Ok(serde_json::from_str(&info)?)
+pub fn get_cdn_url() -> String {
+    format!(
+        "{}://{}/{}",
+        utils::get_mutex(&global::CDN_PROTOCOL),
+        utils::get_mutex(&global::CDN_HOST),
+        utils::get_mutex(&global::CDN_BRANCH)
+    )
 }
 
+/// Get info from CDN
+pub async fn get_info() -> Result<Info, Box<dyn std::error::Error>> {
+    for host in global::CDN_HOSTS {
+        println!("Checking {}", host);
+        utils::set_mutex(&global::CDN_HOST, host.to_owned());
+
+        let url = format!("{}/info.json", get_cdn_url());
+
+        match http::quick_request(&url).await {
+            Ok(response) => match serde_json::from_str::<Info>(&response) {
+                Ok(info) => {
+                    println!("Successfully connected to {}", host);
+                    return Ok(info);
+                }
+                Err(e) => {
+                    println!("Invalid JSON from {}: {}", host, e);
+                    continue;
+                }
+            },
+            Err(e) => {
+                println!("Failed to get info from {}: {}", host, e);
+                continue;
+            }
+        }
+    }
+
+    Err("No CDN host is reachable or returned valid info".into())
+}
+
+/// Filter files by game
 pub fn filter_files(files: Vec<File>, game: crate::game::Game) -> Vec<File> {
     files
         .into_iter()

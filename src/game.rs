@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
@@ -130,6 +130,16 @@ impl Client {
             Client::IW5Mod => "IW5 Mod",
             Client::IW6Mod => "IW6 Mod",
             Client::S1Mod => "S1 Mod",
+        }
+    }
+
+    pub fn internal_name(&self) -> &str {
+        match self {
+            Client::IW4x => "iw4x",
+            Client::IW4xSP => "iw4x-sp",
+            Client::IW5Mod => "iw5-mod",
+            Client::IW6Mod => "iw6-mod",
+            Client::S1Mod => "s1-mod",
         }
     }
 }

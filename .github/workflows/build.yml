@@ -42,4 +42,4 @@ jobs:
         with:
           name: windows-i686-build
           path: dist/
-          retention-days: 3
+          retention-days: 1
