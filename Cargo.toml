@@ -2,6 +2,7 @@
 name = "alterware-launcher"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 
 [dependencies]
 blake3 = "1.5"
@@ -21,3 +22,6 @@ winapi = { version = "0.3", features = ["d3d11"] }
 
 [target.'cfg(unix)'.dependencies]
 openssl = { version = "0.10", default-features = false, features = ["vendored"] }
+
+[build-dependencies]
+static_vcruntime = "2.0"
