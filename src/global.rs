@@ -9,9 +9,12 @@ pub const GITHUB_OWNER: &str = "mxve";
 /// The repository of the launcher
 pub const GITHUB_REPO: &str = "alterware-launcher";
 
-/// Base URL for file downloads
-pub const CDN_URL: &str = "https://cdn.getserve.rs";
 
+// TODO: Make this configurable
+/// Base URL for file downloads
+pub const CDN_URL: &str = "https://cdn.getserve.rs/stable";
+
+// TODO: Make this configurable
 /// The path to the download cache
 pub const CACHE_DIR: &str = "awtmp";
 

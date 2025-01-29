@@ -12,8 +12,12 @@ impl File {
         format!("{}/{}", crate::global::CDN_URL, self.hash)
     }
 
+    pub fn cache_name(&self) -> String {
+        format!("{}", self.hash[..24].to_string())
+    }
+
     pub fn cache_path(&self) -> String {
-        format!("{}/{}", crate::global::CACHE_DIR, self.hash)
+        format!("{}/{}", crate::global::CACHE_DIR, self.cache_name())
     }
 
     pub fn size_human(&self) -> String {
@@ -27,8 +31,8 @@ pub struct Info {
     pub files: Vec<File>,
 }
 
-pub async fn get_info(url: &str) -> Result<Info, Box<dyn std::error::Error>> {
-    let info = crate::http::quick_request(url).await?;
+pub async fn get_info() -> Result<Info, Box<dyn std::error::Error>> {
+    let info = crate::http::quick_request(&format!("{0}/info.json", crate::global::CDN_URL)).await?;
     Ok(serde_json::from_str(&info)?)
 }
 
