@@ -1,0 +1,45 @@
+name: Windows i686 Build
+
+on:
+  push:
+    branches:
+      - v1
+  pull_request:
+    branches:
+      - v1
+
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: i686-pc-windows-msvc
+          override: true
+
+      - name: Build Release
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --target i686-pc-windows-msvc --release
+
+      - name: Process build artifacts
+        run: |
+          mkdir dist
+          cp target/i686-pc-windows-msvc/release/*.exe dist/
+          cp target/i686-pc-windows-msvc/release/*.dll dist/ || true
+          cp target/i686-pc-windows-msvc/release/*.pdb dist/ || true
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-i686-build
+          path: dist/
+          retention-days: 3
