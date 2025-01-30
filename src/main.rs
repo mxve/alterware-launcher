@@ -60,6 +60,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         arg_path(&args, &["-p", "--path", "--game-path"])
             .unwrap_or(std::env::current_dir().unwrap()),
     );
+    utils::set_mutex(
+        &global::CACHE_DIR,
+        arg_path(&args, &["--cache"]).unwrap_or(utils::get_mutex(&global::GAME_DIR).join("awtmp")),
+    );
+    utils::set_mutex_opt(&global::CDN_HOST, arg_value(&args, &["--cdn"]));
 
     let client = args
         .iter()
@@ -68,29 +73,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(client) = client {
         utils::set_mutex(&global::GAME_CLIENT, Some(client));
         utils::set_mutex(&global::GAME, client.game());
-    } else {
-        if let Some(game) = game::detect_game(&utils::get_mutex(&global::GAME_DIR)) {
-            utils::set_mutex(&global::GAME, game);
-            println!("Game: {:?}", game);
+    } else if let Some(game) = game::detect_game(&utils::get_mutex(&global::GAME_DIR)) {
+        utils::set_mutex(&global::GAME, game);
+        println!("Game: {:?}", game);
 
-            match game.clients().len() {
-                0 => {
-                    println!("No clients found for game");
-                    return Ok(());
-                }
-                1 => {
-                    utils::set_mutex(&global::GAME_CLIENT, Some(game.clients()[0]));
-                }
-                _ => {
-                    println!("Multiple clients found for game, please specify one");
-                    return Ok(());
-                }
+        match game.clients().len() {
+            0 => {
+                println!("No clients found for game");
+                return Ok(());
             }
-        } else {
-            println!("No game detected");
-            return Ok(());
+            1 => {
+                utils::set_mutex(&global::GAME_CLIENT, Some(game.clients()[0]));
+            }
+            _ => {
+                println!("Multiple clients found for game, please specify one");
+                return Ok(());
+            }
         }
+    } else {
+        println!("No game detected");
+        return Ok(());
     }
+
+    println!(
+        "Running with\nGame dir {}\nCache dir {}\nCDN host {}\nCDN protocol {}\nCDN branch {}\nGame {}",
+        utils::get_mutex(&global::GAME_DIR).display(),
+        utils::get_mutex(&global::CACHE_DIR).display(),
+        utils::get_mutex(&global::CDN_HOST),
+        utils::get_mutex(&global::CDN_PROTOCOL),
+        utils::get_mutex(&global::CDN_BRANCH),
+        utils::get_mutex(&global::GAME).name()
+    );
 
     let game = utils::get_mutex(&global::GAME);
     let clients = game.clients();
