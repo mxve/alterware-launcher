@@ -19,7 +19,7 @@ pub struct Game<'a> {
     pub required: Vec<&'a str>,
 }
 
-impl<'a> Game<'a> {
+impl Game<'_> {
     pub fn required_files_exist(&self, dir: &Path) -> bool {
         for required_file in &self.required {
             let file_path = dir.join(required_file);

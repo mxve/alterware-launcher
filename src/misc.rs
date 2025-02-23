@@ -1,4 +1,4 @@
-use std::{fs, path::Path};
+use std::fs;
 
 use indicatif::{ProgressBar, ProgressStyle};
 
@@ -142,10 +142,10 @@ pub fn prefix(tag_name: &str) -> String {
 
 pub fn random_string(length: u32) -> String {
     use rand::Rng;
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let mut result = String::new();
     for _ in 0..length {
-        let random: u8 = rng.gen_range(33..127);
+        let random: u8 = rng.random_range(33..127);
         result.push(random as char);
     }
     result
