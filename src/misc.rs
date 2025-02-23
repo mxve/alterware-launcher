@@ -1,4 +1,6 @@
 use std::fs;
+#[cfg(windows)]
+use std::path::Path;
 
 use indicatif::{ProgressBar, ProgressStyle};
 
