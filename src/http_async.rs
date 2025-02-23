@@ -127,10 +127,10 @@ pub async fn get_json<T: serde::de::DeserializeOwned>(url: &str) -> Result<T, St
         return Err(format!("Request failed with status: {}", res.status()));
     }
 
-    let body = res.bytes()
+    let body = res
+        .bytes()
         .await
         .map_err(|e| format!("Failed to read response body: {}", e))?;
 
-    serde_json::from_slice::<T>(&body)
-        .map_err(|e| format!("Failed to parse JSON: {}", e))
+    serde_json::from_slice::<T>(&body).map_err(|e| format!("Failed to parse JSON: {}", e))
 }

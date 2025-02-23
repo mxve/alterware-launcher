@@ -703,7 +703,7 @@ async fn main() {
         cfg.offline = true;
         arg_remove(&mut args, "--offline");
     }
-    
+
     if arg_bool(&args, "--skip-connectivity-check") {
         cfg.skip_connectivity_check = true;
         arg_remove(&mut args, "--skip-connectivity-check");

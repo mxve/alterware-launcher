@@ -1,12 +1,12 @@
+use crate::http_async;
 use crate::structs::PrintPrefix;
 use colored::Colorize;
 use once_cell::sync::Lazy;
-use std::collections::HashMap;
-use std::sync::Mutex;
-use std::pin::Pin;
-use std::future::Future;
-use crate::http_async;
 use serde_json::Value;
+use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::Mutex;
 
 pub const GH_OWNER: &str = "mxve";
 pub const GH_REPO: &str = "alterware-launcher";
@@ -15,9 +15,7 @@ pub const GH_IW4X_REPO: &str = "iw4x-client";
 pub const DEFAULT_MASTER: &str = "https://cdn.alterware.ovh";
 pub const BACKUP_MASTER: &str = "https://cdn.iw4x.getserve.rs";
 
-pub static MASTER_URL: Lazy<Mutex<String>> = Lazy::new(|| {
-    Mutex::new(String::from(DEFAULT_MASTER))
-});
+pub static MASTER_URL: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::from(DEFAULT_MASTER)));
 
 pub static IS_OFFLINE: Lazy<Mutex<bool>> = Lazy::new(|| Mutex::new(false));
 
@@ -61,7 +59,9 @@ pub static PREFIXES: Lazy<HashMap<&'static str, PrintPrefix>> = Lazy::new(|| {
     ])
 });
 
-pub fn check_connectivity(master_url: Option<String>) -> Pin<Box<dyn Future<Output = bool> + Send>> {
+pub fn check_connectivity(
+    master_url: Option<String>,
+) -> Pin<Box<dyn Future<Output = bool> + Send>> {
     Box::pin(async move {
         let retry = master_url.is_some();
         if !retry {
@@ -75,7 +75,8 @@ pub fn check_connectivity(master_url: Option<String>) -> Pin<Box<dyn Future<Outp
         let master_url = MASTER_URL.lock().unwrap().clone();
 
         // Check ASN number using the new get_json function
-        let asn_response: Result<Value, String> = http_async::get_json("https://ip2asn.getserve.rs/v1/as/ip/self").await;
+        let asn_response: Result<Value, String> =
+            http_async::get_json("https://ip2asn.getserve.rs/v1/as/ip/self").await;
 
         let mut switched_to_backup = false;
 
@@ -83,7 +84,10 @@ pub fn check_connectivity(master_url: Option<String>) -> Pin<Box<dyn Future<Outp
             if let Some(as_number) = asn_data.get("as_number").and_then(|v| v.as_i64()) {
                 if as_number == 3320 && master_url == DEFAULT_MASTER {
                     *MASTER_URL.lock().unwrap() = String::from(BACKUP_MASTER);
-                    crate::println_info!("Detected DTAG as ISP, switched to backup master URL: {}", BACKUP_MASTER);
+                    crate::println_info!(
+                        "Detected DTAG as ISP, switched to backup master URL: {}",
+                        BACKUP_MASTER
+                    );
                     switched_to_backup = true;
                 }
             }
