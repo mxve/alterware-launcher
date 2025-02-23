@@ -272,7 +272,7 @@ async fn update_dir(
         let mut bust_cache = false;
         let mut local_hash = String::default();
         while !download_complete {
-            let url = format!("{}/{}", MASTER.lock().unwrap(), file.name);
+            let url = format!("{}/{}", MASTER_URL.lock().unwrap(), file.name);
             let url = if bust_cache {
                 bust_cache = false;
                 format!("{}?{}", url, misc::random_string(6))
@@ -347,7 +347,7 @@ async fn update(
     let ignore_required_files = ignore_required_files.unwrap_or(false);
 
     let res =
-        http_async::get_body_string(format!("{}/files.json", MASTER.lock().unwrap()).as_str())
+        http_async::get_body_string(format!("{}/files.json", MASTER_URL.lock().unwrap()).as_str())
             .await
             .unwrap();
     debug!("Retrieved files.json from server");
@@ -653,6 +653,8 @@ async fn main() {
         println!("    --skip-redist: Skip redistributable installation");
         println!("    --redist: (Re-)Install redistributables");
         println!("    --prerelease: Update to prerelease version of clients and launcher");
+        println!("    --offline: Run in offline mode");
+        println!("    --skip-connectivity-check: Don't check connectivity");
         println!(
             "\nExample:\n    alterware-launcher.exe iw4x --bonus --pass \"-console -nointro\""
         );
@@ -679,8 +681,46 @@ async fn main() {
         return;
     }
 
-    let offline_mode = !global::check_connectivity().await;
-    if offline_mode {
+    let install_path: PathBuf;
+    if let Some(path) = arg_value(&args, "--path") {
+        install_path = PathBuf::from(path);
+        arg_remove_value(&mut args, "--path");
+    } else if let Some(path) = arg_value(&args, "-p") {
+        install_path = PathBuf::from(path);
+        arg_remove_value(&mut args, "-p");
+    } else {
+        install_path = env::current_dir().unwrap();
+    }
+
+    let mut cfg = config::load(install_path.join("alterware-launcher.json"));
+
+    if let Some(cdn_url) = arg_value(&args, "--cdn-url") {
+        cfg.cdn_url = cdn_url;
+        arg_remove_value(&mut args, "--cdn-url");
+    }
+
+    if arg_bool(&args, "--offline") {
+        cfg.offline = true;
+        arg_remove(&mut args, "--offline");
+    }
+    
+    if arg_bool(&args, "--skip-connectivity-check") {
+        cfg.skip_connectivity_check = true;
+        arg_remove(&mut args, "--skip-connectivity-check");
+    }
+
+    let initial_cdn = if !cfg.cdn_url.is_empty() {
+        info!("Using custom CDN URL: {}", cfg.cdn_url);
+        Some(cfg.cdn_url.clone())
+    } else {
+        None
+    };
+
+    if !cfg.offline && !cfg.skip_connectivity_check {
+        cfg.offline = !global::check_connectivity(initial_cdn).await;
+    }
+
+    if cfg.offline {
         // Check if this is a first-time run (no stored data)
         let stored_data = cache::get_stored_data();
         if stored_data.is_none() {
@@ -700,20 +740,6 @@ async fn main() {
             PREFIXES.get("error").unwrap().formatted()
         );
         warn!("No internet connection or MASTER server is unreachable. Running in offline mode...");
-
-        // Handle path the same way as online mode
-        let install_path: PathBuf;
-        if let Some(path) = arg_value(&args, "--path") {
-            install_path = PathBuf::from(path);
-            arg_remove_value(&mut args, "--path");
-        } else if let Some(path) = arg_value(&args, "-p") {
-            install_path = PathBuf::from(path);
-            arg_remove_value(&mut args, "-p");
-        } else {
-            install_path = env::current_dir().unwrap();
-        }
-
-        let cfg = config::load(install_path.join("alterware-launcher.json"));
 
         // Try to get stored game data
         let stored_data = cache::get_stored_data();
@@ -763,21 +789,8 @@ async fn main() {
         return;
     }
 
-    let install_path: PathBuf;
-    if let Some(path) = arg_value(&args, "--path") {
-        install_path = PathBuf::from(path);
-        arg_remove_value(&mut args, "--path");
-    } else if let Some(path) = arg_value(&args, "-p") {
-        install_path = PathBuf::from(path);
-        arg_remove_value(&mut args, "-p");
-    } else {
-        install_path = env::current_dir().unwrap();
-    }
-
-    let mut cfg = config::load(install_path.join("alterware-launcher.json"));
-
     if !cfg.use_https {
-        let mut master_url = MASTER.lock().unwrap();
+        let mut master_url = MASTER_URL.lock().unwrap();
         *master_url = master_url.replace("https://", "http://");
     };
 
@@ -841,7 +854,7 @@ async fn main() {
     }
 
     let games_json =
-        http_async::get_body_string(format!("{}/games.json", MASTER.lock().unwrap()).as_str())
+        http_async::get_body_string(format!("{}/games.json", MASTER_URL.lock().unwrap()).as_str())
             .await
             .unwrap_or_else(|error| {
                 crate::println_error!("Failed to get games.json: {:#?}", error);

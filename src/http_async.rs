@@ -103,3 +103,34 @@ pub async fn get_body_string(url: &str) -> Result<String, String> {
     let body = get_body(url).await?;
     Ok(String::from_utf8(body).unwrap())
 }
+
+pub async fn get_json<T: serde::de::DeserializeOwned>(url: &str) -> Result<T, String> {
+    let client = Client::new();
+    let res = client
+        .get(url)
+        .header(
+            "User-Agent",
+            format!(
+                "AlterWare Launcher | github.com/{}/{}",
+                crate::global::GH_OWNER,
+                crate::global::GH_REPO
+            ),
+        )
+        .header("Accept", "application/json")
+        .send()
+        .await
+        .map_err(|e| format!("Failed to send request: {}", e))?;
+
+    debug!("{} {}", res.status(), url);
+
+    if !res.status().is_success() {
+        return Err(format!("Request failed with status: {}", res.status()));
+    }
+
+    let body = res.bytes()
+        .await
+        .map_err(|e| format!("Failed to read response body: {}", e))?;
+
+    serde_json::from_slice::<T>(&body)
+        .map_err(|e| format!("Failed to parse JSON: {}", e))
+}

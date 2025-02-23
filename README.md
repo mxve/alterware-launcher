@@ -150,6 +150,9 @@
   - Install or reinstall redistributables
 - ```--prerelease```
   - Update to prerelease version of clients (currently only available for IW4x) and launcher
+- ```--cdn-url```
+- ```--offline```
+- ```--skip-connectivity-check```
 
 ##### Example:
 ```shell
@@ -171,6 +174,9 @@ alterware-launcher.exe iw4x --bonus -u --path "C:\Games\IW4x" --pass "-console"
 - `use_https`: Use HTTPS for downloads. Default: `true`.
 - `skip_redist`: Skip redistributable installations. Default: `false`.
 - `prerelease`: Update to prerelease version of clients and launcher. Default: `false`.
+- `cdn_url`
+- `offline`
+- `skip-connectivity-check`
 
 ---
 
