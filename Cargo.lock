@@ -1573,15 +1573,15 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "simple-log"
-version = "2.1.1"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "947f8c2d912e08925082b695d3d9a49534c1f728108f3c02c35e3fc85964a0b9"
+checksum = "7d16cc0c2350bdf0f26489e074f9ecf79f1cddf96cbd754efcc33493bfc5be40"
 dependencies = [
  "log",
  "log4rs",
  "once_cell",
  "serde",
- "winnow",
+ "winnow 0.7.3",
 ]
 
 [[package]]
@@ -1852,7 +1852,7 @@ dependencies = [
  "serde",
  "serde_spanned",
  "toml_datetime",
- "winnow",
+ "winnow 0.6.20",
 ]
 
 [[package]]
@@ -2411,6 +2411,15 @@ name = "winnow"
 version = "0.6.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "36c1fec1a2bb5866f07c25f68c26e565c4c200aebb96d7e55710c19d3e8ac49b"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
+name = "winnow"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e7f4ea97f6f78012141bcdb6a216b2609f0979ada50b20ca5b52dde2eac2bb1"
 dependencies = [
  "memchr",
 ]
