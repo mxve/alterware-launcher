@@ -17,6 +17,8 @@ pub struct Game<'a> {
     pub bonus: Vec<&'a str>,
     pub delete: Vec<&'a str>,
     pub required: Vec<&'a str>,
+    #[serde(default)]
+    pub rename: Vec<(&'a str, &'a str)>,
 }
 
 impl Game<'_> {

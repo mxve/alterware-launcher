@@ -385,6 +385,28 @@ async fn update(
         cache::get_cache(dir)
     };
 
+    for entry in game.rename.iter() {
+        let file_path = dir.join(entry.0);
+        let new_path = dir.join(entry.1);
+        if file_path.exists() {
+            if fs::rename(&file_path, &new_path).is_err() {
+                println!(
+                    "{}Couldn't rename {} -> {}",
+                    misc::prefix("error"),
+                    file_path.cute_path(),
+                    new_path.cute_path()
+                );
+            } else {
+                println!(
+                    "{}{} -> {}",
+                    misc::prefix("renamed"),
+                    file_path.cute_path(),
+                    new_path.cute_path()
+                );
+            }
+        }
+    }
+
     if game.engine == "iw4" {
         iw4x::update(dir, &mut cache, prerelease).await;
 
@@ -412,13 +434,12 @@ async fn update(
                 .filter(|e| e.file_type().is_file())
             {
                 let rel_path = entry.path().strip_prefix(dir).unwrap_or(entry.path());
-                let cdn_path = if rel_path.starts_with("iw4-dlc") {
-                    rel_path.to_path_buf()
-                } else {
-                    Path::new("iw4").join(rel_path)
-                };
+                let cdn_paths = [
+                    Path::new("iw4").join(rel_path),
+                    Path::new("iw4-dlc").join(rel_path),
+                ];
 
-                if !valid_files.contains(&cdn_path) {
+                if !cdn_paths.iter().any(|path| valid_files.contains(path)) {
                     crate::println_info!("{}{}", misc::prefix("removed"), entry.path().cute_path());
                     if std::fs::remove_file(entry.path()).is_err() {
                         crate::println_error!(

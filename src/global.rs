@@ -56,6 +56,13 @@ pub static PREFIXES: Lazy<HashMap<&'static str, PrintPrefix>> = Lazy::new(|| {
                 padding: 7,
             },
         ),
+        (
+            "renamed",
+            PrintPrefix {
+                text: "Renamed".bright_blue(),
+                padding: 5,
+            },
+        ),
     ])
 });
 
