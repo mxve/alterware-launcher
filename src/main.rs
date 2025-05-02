@@ -26,7 +26,7 @@ use mslnk::ShellLink;
 use simple_log::LogConfigBuilder;
 use std::{
     borrow::Cow,
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     env, fs,
     path::{Path, PathBuf},
 };
@@ -388,56 +388,44 @@ async fn update(
     if game.engine == "iw4" {
         iw4x::update(dir, &mut cache, prerelease).await;
 
-        let iw4x_dirs = vec!["iw4x", "zone/patch"];
-        for d in &iw4x_dirs {
-            if let Ok(dir_iter) = dir.join(d).read_dir() {
-                'outer: for file in dir_iter.filter_map(|entry| entry.ok()) {
-                    let file_path = file.path();
+        let scan_dirs = ["iw4x", "zone/patch"];
+        let valid_files: HashSet<_> = cdn_info
+            .iter()
+            .filter_map(|cdn_file| {
+                if cdn_file.name.starts_with("iw4/") || cdn_file.name.starts_with("iw4-dlc/") {
+                    Some(Path::new(&cdn_file.name).to_path_buf())
+                } else {
+                    None
+                }
+            })
+            .collect();
 
-                    if file_path.is_dir() {
-                        continue;
-                    }
+        for scan_dir in scan_dirs.iter() {
+            let full_scan_dir = dir.join(scan_dir);
+            if !full_scan_dir.exists() || !full_scan_dir.is_dir() {
+                continue;
+            }
 
-                    let file_path_rel = match file_path.strip_prefix(dir) {
-                        Ok(rel) => rel.to_path_buf(),
-                        Err(_) => continue,
-                    };
+            for entry in walkdir::WalkDir::new(&full_scan_dir)
+                .into_iter()
+                .filter_map(Result::ok)
+                .filter(|e| e.file_type().is_file())
+            {
+                let rel_path = entry.path().strip_prefix(dir).unwrap_or(entry.path());
+                let cdn_path = if rel_path.starts_with("iw4-dlc") {
+                    rel_path.to_path_buf()
+                } else {
+                    Path::new("iw4").join(rel_path)
+                };
 
-                    if iw4x_dirs
-                        .iter()
-                        .any(|prefix| file_path_rel.starts_with(Path::new(prefix)))
-                    {
-                        if !cdn_info
-                            .iter()
-                            .any(|cdn_file| cdn_file.name.starts_with("iw4"))
-                        {
-                            continue;
-                        }
-
-                        let should_continue = cdn_info.iter().any(|cdn_file| {
-                            let path_rem = Path::new(&cdn_file.name)
-                                .strip_prefix(Path::new("iw4"))
-                                .unwrap_or_else(|_| Path::new(&cdn_file.name));
-                            path_rem == file_path_rel
-                        });
-
-                        if should_continue {
-                            continue 'outer;
-                        }
-
-                        crate::println_info!(
-                            "{}{}",
-                            misc::prefix("removed"),
-                            file_path.cute_path()
+                if !valid_files.contains(&cdn_path) {
+                    crate::println_info!("{}{}", misc::prefix("removed"), entry.path().cute_path());
+                    if std::fs::remove_file(entry.path()).is_err() {
+                        crate::println_error!(
+                            "{}Couldn't delete {}",
+                            misc::prefix("error"),
+                            entry.path().cute_path()
                         );
-
-                        if fs::remove_file(&file_path).is_err() {
-                            crate::println_error!(
-                                "{}Couldn't delete {}",
-                                misc::prefix("error"),
-                                file_path.cute_path()
-                            );
-                        }
                     }
                 }
             }
