@@ -30,7 +30,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: taiki-e/upload-rust-binary-action@v1.25.0
+      - uses: taiki-e/upload-rust-binary-action@v1.26.0
         with:
           target: ${{ matrix.target }}
           bin: alterware-launcher
