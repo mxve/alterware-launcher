@@ -300,11 +300,7 @@ async fn update_dir(
 
             local_hash = file_path.get_blake3().unwrap().to_lowercase();
             let remote = file.blake3.to_lowercase();
-            if local_hash != remote {
-                if file_path.ends_with(".html") {
-                    println_info!("Ignoring mismatched hash for {}", file_path.cute_path());
-                    continue;
-                }
+            if local_hash != remote && !file_path.ends_with(".html") {
                 println_error!("Downloaded file hash does not match remote!\nRemote {remote}, local {local_hash}, {}\nIf this issue persists please try again in 15 minutes.", file_path.cute_path());
                 println!("Retry download? (Y/n)");
                 let input = misc::stdin().to_ascii_lowercase();
