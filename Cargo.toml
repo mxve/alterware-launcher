@@ -36,7 +36,7 @@ self-replace = "1.5.0"
 runas = "1.2.0"
 
 [build-dependencies]
-winresource = "0.1.19"
+winresource = "0.1.20"
 static_vcruntime = "2.0"
 
 [dev-dependencies]
