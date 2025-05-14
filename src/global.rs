@@ -89,10 +89,10 @@ pub fn check_connectivity(
 
         if let Ok(asn_data) = asn_response {
             if let Some(as_number) = asn_data.get("as_number").and_then(|v| v.as_i64()) {
-                if as_number == 3320 && master_url == DEFAULT_MASTER {
+                if (as_number == 3320 || as_number == 5483) && master_url == DEFAULT_MASTER {
                     *MASTER_URL.lock().unwrap() = String::from(BACKUP_MASTER);
                     crate::println_info!(
-                        "Detected DTAG as ISP, switched to backup master URL: {}",
+                        "Detected Deutsche Telekom/DTAG/Magyar Telekom as ISP, switching to backup master URL: {}",
                         BACKUP_MASTER
                     );
                     switched_to_backup = true;
