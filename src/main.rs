@@ -1,8 +1,10 @@
 mod cache;
+mod cdn;
 mod config;
 mod extend;
 mod github;
 mod global;
+mod http;
 mod http_async;
 mod iw4x;
 mod misc;
@@ -726,7 +728,11 @@ async fn main() {
     };
 
     if !cfg.offline && !cfg.skip_connectivity_check {
-        cfg.offline = !global::check_connectivity(initial_cdn).await;
+        if initial_cdn.is_some() {
+            cfg.offline = !global::check_connectivity(initial_cdn).await;
+        } else {
+            cfg.offline = !global::check_connectivity_and_rate_cdns().await.await;
+        }
     }
 
     if cfg.offline {

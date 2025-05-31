@@ -1,19 +1,35 @@
-use crate::http_async;
 use crate::structs::PrintPrefix;
 use colored::Colorize;
 use once_cell::sync::Lazy;
-use serde_json::Value;
 use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Mutex;
+
+use crate::cdn::{Hosts, Region, Server};
 
 pub const GH_OWNER: &str = "mxve";
 pub const GH_REPO: &str = "alterware-launcher";
 pub const GH_IW4X_OWNER: &str = "iw4x";
 pub const GH_IW4X_REPO: &str = "iw4x-client";
 pub const DEFAULT_MASTER: &str = "https://cdn.alterware.ovh";
-pub const BACKUP_MASTER: &str = "https://cdn.getserve.rs";
+
+pub const CDN_HOSTS: [Server; 2] = [
+    Server::new("cdn.alterware.ovh", Region::Global),
+    Server::new("cdn.iw4x.dev", Region::Europe),
+];
+
+pub const IP2ASN: &str = "https://ip2asn.getserve.rs/v1/as/ip/self";
+
+pub static USER_AGENT: Lazy<String> = Lazy::new(|| {
+    format!(
+        "AlterWare Launcher v{} on {} | github.com/{}/{}",
+        env!("CARGO_PKG_VERSION"),
+        std::env::consts::OS,
+        GH_OWNER,
+        GH_REPO
+    )
+});
 
 pub static MASTER_URL: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::from(DEFAULT_MASTER)));
 
@@ -66,58 +82,53 @@ pub static PREFIXES: Lazy<HashMap<&'static str, PrintPrefix>> = Lazy::new(|| {
     ])
 });
 
+pub async fn check_connectivity_and_rate_cdns() -> Pin<Box<dyn Future<Output = bool> + Send>> {
+    Box::pin(async move {
+        crate::println_info!("Initializing CDN rating system...");
+        let hosts = Hosts::new().await;
+        let best_cdn = hosts.get_master_url();
+
+        if let Some(cdn_url) = best_cdn {
+            let cdn_url = cdn_url.trim_end_matches('/');
+            *MASTER_URL.lock().unwrap() = cdn_url.to_string();
+            crate::println_info!("Selected CDN: {}", cdn_url);
+
+            match crate::http_async::get_body_string(cdn_url).await {
+                Ok(_) => {
+                    info!("Successfully connected to CDN: {}", cdn_url);
+                    true
+                }
+                Err(e) => {
+                    error!("Failed to connect to selected CDN {}: {}", cdn_url, e);
+                    *IS_OFFLINE.lock().unwrap() = true;
+                    false
+                }
+            }
+        } else {
+            crate::println_error!("No CDN hosts are available");
+            *IS_OFFLINE.lock().unwrap() = true;
+            false
+        }
+    })
+}
+
 pub fn check_connectivity(
     master_url: Option<String>,
 ) -> Pin<Box<dyn Future<Output = bool> + Send>> {
     Box::pin(async move {
-        let retry = master_url.is_some();
-        if !retry {
-            crate::println_info!("Running connectivity check on {}", DEFAULT_MASTER);
-        } else {
-            let master = master_url.unwrap();
-            *MASTER_URL.lock().unwrap() = master.clone();
-            crate::println_info!("Running connectivity check on {}", master);
-        }
+        if let Some(url) = master_url {
+            *MASTER_URL.lock().unwrap() = url.clone();
+            crate::println_info!("Using fallback connectivity check on {}", url);
 
-        let master_url = MASTER_URL.lock().unwrap().clone();
-
-        // Check ASN number using the new get_json function
-        let asn_response: Result<Value, String> =
-            http_async::get_json("https://ip2asn.getserve.rs/v1/as/ip/self").await;
-
-        let mut switched_to_backup = false;
-
-        if let Ok(asn_data) = asn_response {
-            if let Some(as_number) = asn_data.get("as_number").and_then(|v| v.as_i64()) {
-                if (as_number == 3320 || as_number == 5483) && master_url == DEFAULT_MASTER {
-                    *MASTER_URL.lock().unwrap() = String::from(BACKUP_MASTER);
-                    crate::println_info!(
-                        "Detected Deutsche Telekom/DTAG/Magyar Telekom as ISP, switching to backup master URL: {}",
-                        BACKUP_MASTER
-                    );
-                    switched_to_backup = true;
+            match crate::http_async::get_body_string(&url).await {
+                Ok(_) => true,
+                Err(_) => {
+                    *IS_OFFLINE.lock().unwrap() = true;
+                    false
                 }
             }
-        }
-
-        // Run connectivity check regardless of ASN switch
-        let result = match crate::http_async::get_body_string(&master_url).await {
-            Ok(_) => true,
-            Err(_) => {
-                *IS_OFFLINE.lock().unwrap() = true;
-                false
-            }
-        };
-
-        if !result {
-            crate::println_error!("Failed to connect to CDN {}", master_url);
-        }
-
-        // If we switched to backup, do not retry
-        if !retry && !result && !switched_to_backup {
-            check_connectivity(Some(String::from(BACKUP_MASTER))).await
         } else {
-            result
+            check_connectivity_and_rate_cdns().await.await
         }
     })
 }
