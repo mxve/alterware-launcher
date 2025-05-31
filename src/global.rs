@@ -14,8 +14,9 @@ pub const GH_IW4X_OWNER: &str = "iw4x";
 pub const GH_IW4X_REPO: &str = "iw4x-client";
 pub const DEFAULT_MASTER: &str = "https://cdn.alterware.ovh";
 
-pub const CDN_HOSTS: [Server; 2] = [
+pub const CDN_HOSTS: [Server; 3] = [
     Server::new("cdn.alterware.ovh", Region::Global),
+    Server::new("us-cdn.alterware.ovh", Region::NorthAmerica),
     Server::new("cdn.iw4x.dev", Region::Europe),
 ];
 

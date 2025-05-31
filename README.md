@@ -150,9 +150,12 @@
   - Install or reinstall redistributables
 - ```--prerelease```
   - Update to prerelease version of clients (currently only available for IW4x) and launcher
+- ```--rate```
+  - Rate and display CDN servers
 - ```--cdn-url```
 - ```--offline```
 - ```--skip-connectivity-check```
+
 
 ##### Example:
 ```shell

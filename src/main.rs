@@ -666,6 +666,7 @@ async fn main() {
         println!("    --prerelease: Update to prerelease version of clients and launcher");
         println!("    --offline: Run in offline mode");
         println!("    --skip-connectivity-check: Don't check connectivity");
+        println!("    --rate: Display CDN rating information and exit");
         println!(
             "\nExample:\n    alterware-launcher.exe iw4x --bonus --pass \"-console -nointro\""
         );
@@ -689,6 +690,11 @@ async fn main() {
             "mxve".bright_magenta().on_black().underline(),
             ".de".on_black().underline()
         );
+        return;
+    }
+
+    if arg_bool(&args, "--rate") {
+        cdn::rate_cdns_and_display().await;
         return;
     }
 
