@@ -31,7 +31,7 @@ openssl = { version = "0.10.71", default-features = false, features = ["vendored
 
 [target.'cfg(windows)'.dependencies]
 # todo: update to 2.0.x; needs testing on windows
-steamlocate = "=2.0.0-beta.2"
+steamlocate = "=2.0.1"
 mslnk = "0.1.8"
 self-replace = "1.5.0"
 runas = "1.2.0"
