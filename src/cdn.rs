@@ -108,6 +108,12 @@ impl Hosts {
 
         let asn = crate::http::get_asn().await;
         hosts.rate(asn, true).await;
+
+        if hosts.servers.iter().all(|server| server.rating == 0) {
+            info!("All CDN servers failed with 500ms timeout, retrying with 5000ms timeout");
+            hosts.rate(asn, false).await;
+        }
+
         hosts
     }
 
