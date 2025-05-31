@@ -167,14 +167,12 @@ impl Server {
         }
 
         let distance_km = user_region.distance_to(self.region);
-        let region_multiplier = if distance_km == 0.0 {
+        let region_multiplier = if self.region == Region::Global {
+            1.4
+        } else if distance_km == 0.0 {
             1.3
         } else if user_region == Region::Unknown {
-            if self.region == Region::Global {
-                1.1
-            } else {
-                1.0
-            }
+            1.0
         } else if distance_km <= 2000.0 {
             1.25
         } else if distance_km <= 5000.0 {
@@ -232,13 +230,15 @@ impl Hosts {
             return false;
         }
 
-        // find best host by rating, fifo if equal
-        if let Some((idx, _)) = self
-            .servers
-            .iter()
-            .enumerate()
-            .max_by_key(|(idx, server)| (server.rating, -(*idx as i32)))
-        {
+        // find best host by rating, then by latency
+        if let Some((idx, _)) = self.servers.iter().enumerate().max_by_key(|(_, server)| {
+            (
+                server.rating,
+                server
+                    .latency
+                    .map_or(0, |l| u64::MAX - l.as_millis() as u64),
+            )
+        }) {
             let server = &self.servers[idx];
             *CURRENT_CDN.lock().unwrap() = Some(Arc::new(*server));
             *self.active_index.write().unwrap() = Some(idx);
