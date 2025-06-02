@@ -212,7 +212,7 @@ impl Hosts {
         hosts.rate(asn, user_region, true).await;
 
         if hosts.servers.iter().all(|server| server.rating == 0) {
-            info!("All CDN servers failed with 500ms timeout, retrying with 5000ms timeout");
+            info!("All CDN servers failed with 1000ms timeout, retrying with 5000ms timeout");
             hosts.rate(asn, user_region, false).await;
         }
 
