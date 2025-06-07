@@ -92,7 +92,7 @@ pub async fn install_dependencies(_install_path: &Path, force_reinstall: bool) {
     } else {
         crate::println_info!("Installing redistributables...");
     }
-    
+
     if !is_program_in_path("winget") {
         crate::println_info!(
             "winget is not available. Unable to install redistributables automatically."
@@ -120,16 +120,14 @@ pub async fn install_dependencies(_install_path: &Path, force_reinstall: bool) {
             "--accept-package-agreements",
             "--accept-source-agreements",
         ];
-        
+
         if force_reinstall {
             args.push("--force");
         }
-        
-        let result = std::process::Command::new("winget")
-            .args(&args)
-            .output();
 
-                match result {
+        let result = std::process::Command::new("winget").args(&args).output();
+
+        match result {
             Ok(output) => {
                 if output.status.success() {
                     crate::println_info!("Successfully installed {}", package);
