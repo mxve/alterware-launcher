@@ -22,12 +22,12 @@ reqwest = { version = "0.12.12", features = ["stream"] }
 futures-util = "0.3.31"
 futures = "0.3.31"
 indicatif = "0.17.11"
-tokio = { version="1.43.0", features = ["rt-multi-thread", "macros"] }
+tokio = { version="1.43.1", features = ["rt-multi-thread", "macros"] }
 simple-log = "2.3.0"
 walkdir = "2.5"
 
 [target.'cfg(unix)'.dependencies]
-openssl = { version = "0.10.71", default-features = false, features = ["vendored"] }
+openssl = { version = "0.10.72", default-features = false, features = ["vendored"] }
 
 [target.'cfg(windows)'.dependencies]
 # todo: update to 2.0.x; needs testing on windows
