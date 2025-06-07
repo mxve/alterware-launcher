@@ -868,9 +868,7 @@ async fn main() {
     #[cfg(windows)]
     if arg_bool(&args, "--redist") {
         arg_remove(&mut args, "--redist");
-        misc::install_dependencies(&install_path).await;
-        println_info!("Redistributables installation finished. Press enter to exit...");
-        misc::stdin();
+        misc::install_dependencies(&install_path, true).await;
         std::process::exit(0);
     }
 
@@ -941,7 +939,7 @@ async fn main() {
 
                     #[cfg(windows)]
                     if !cfg.skip_redist {
-                        misc::install_dependencies(&install_path).await;
+                        misc::install_dependencies(&install_path, false).await;
                     }
                 }
 

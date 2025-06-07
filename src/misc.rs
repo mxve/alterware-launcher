@@ -54,6 +54,21 @@ pub fn is_program_in_path(program: &str) -> bool {
         .unwrap_or(false)
 }
 
+#[cfg(windows)]
+pub fn is_program_in_path(program: &str) -> bool {
+    std::env::var_os("PATH")
+        .and_then(|paths| {
+            paths.to_str().map(|paths| {
+                paths.split(';').any(|dir| {
+                    fs::metadata(format!("{}\\{}.exe", dir, program)).is_ok()
+                        || fs::metadata(format!("{}\\{}.cmd", dir, program)).is_ok()
+                        || fs::metadata(format!("{}\\{}.bat", dir, program)).is_ok()
+                })
+            })
+        })
+        .unwrap_or(false)
+}
+
 #[macro_export]
 macro_rules! println_info {
     ($($arg:tt)*) => {{
@@ -71,68 +86,68 @@ macro_rules! println_error {
 }
 
 #[cfg(windows)]
-fn install_dependency(path: &Path, args: &[&str]) {
-    if path.exists() {
-        match runas::Command::new(path).args(args).status() {
-            Ok(status) if status.success() || matches!(status.code(), Some(1638) | Some(3010)) => {
-                info!("{} installed successfully", path.display());
-            }
-            Ok(status) => {
-                println_error!("Error installing dependency {}, {status}", path.display());
-            }
-            Err(e) if e.raw_os_error() == Some(740) => {
-                println_error!(
-                    "Error: Process requires elevation. Please run the launcher as administrator or install {} manually",
-                    path.display()
-                );
-            }
-            Err(e) => {
-                println_error!("Error running file {}: {e}", path.display());
-            }
-        }
+pub async fn install_dependencies(_install_path: &Path, force_reinstall: bool) {
+    if force_reinstall {
+        crate::println_info!("Force reinstalling redistributables...");
     } else {
-        println_error!("Installer not found: {}", path.display());
+        crate::println_info!("Installing redistributables...");
     }
-}
-
-#[cfg(windows)]
-async fn download_and_install_dependency(url: &str, path: &Path, args: &[&str]) {
-    if !path.exists() {
-        info!("Downloading {} from {url}", path.display());
-        if let Some(parent) = path.parent() {
-            if let Err(e) = fs::create_dir_all(parent) {
-                println_error!("Error creating directory {}: {e}", parent.display());
-                return;
-            }
-        }
-        match crate::http_async::download_file(url, &std::path::PathBuf::from(path)).await {
-            Ok(_) => info!("Downloaded {}", path.display()),
-            Err(e) => {
-                println_error!("Error downloading {}: {e}", path.display());
-                return;
-            }
-        }
+    
+    if !is_program_in_path("winget") {
+        crate::println_info!(
+            "winget is not available. Unable to install redistributables automatically."
+        );
+        crate::println_info!(
+            "Please install Visual C++ Redistributables and DirectX manually if needed."
+        );
+        return;
     }
-    install_dependency(path, args);
-}
 
-#[cfg(windows)]
-pub async fn install_dependencies(install_path: &Path) {
-    println!("If you run into issues during dependency installation, open alterware-launcher.json and set \"skip_redist\" to true");
-
-    let redist_dir = install_path.join("redist\\alterware");
-    let redists = [
-        ("VC++ 2005", "https://download.microsoft.com/download/8/B/4/8B42259F-5D70-43F4-AC2E-4B208FD8D66A/vcredist_x86.EXE", "vcredist_2005_x86.exe", &["/Q"] as &[&str]),
-        ("VC++ 2008", "https://download.microsoft.com/download/5/D/8/5D8C65CB-C849-4025-8E95-C3966CAFD8AE/vcredist_x86.exe", "vcredist_2008_x86.exe", &["/Q"] as &[&str]),
-        ("VC++ 2010", "https://download.microsoft.com/download/1/6/5/165255E7-1014-4D0A-B094-B6A430A6BFFC/vcredist_x86.exe", "vcredist_2010_x86.exe", &["/Q"] as &[&str]),
-        ("VC++ 2015", "https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x86.exe", "vcredist_2015_x86.exe", &["/install", "/passive", "/norestart"] as &[&str]),
-        ("DirectX End User Runtime", "https://download.microsoft.com/download/1/7/1/1718CCC4-6315-4D8E-9543-8E28A4E18C4C/dxwebsetup.exe", "dxwebsetup.exe", &["/Q"] as &[&str]),
+    let packages = [
+        "Microsoft.VCRedist.2005.x86",
+        "Microsoft.VCRedist.2008.x86",
+        "Microsoft.VCRedist.2010.x86",
+        "Microsoft.VCRedist.2015+.x86",
+        "Microsoft.DirectX",
     ];
 
-    for (name, url, file, args) in redists.iter() {
-        let path = redist_dir.join(file);
-        println_info!("Installing {name}");
-        download_and_install_dependency(url, &path, args).await;
+    for package in packages.iter() {
+        let mut args = vec![
+            "install",
+            "--id",
+            package,
+            "--silent",
+            "--accept-package-agreements",
+            "--accept-source-agreements",
+        ];
+        
+        if force_reinstall {
+            args.push("--force");
+        }
+        
+        let result = std::process::Command::new("winget")
+            .args(&args)
+            .output();
+
+                match result {
+            Ok(output) => {
+                if output.status.success() {
+                    crate::println_info!("Successfully installed {}", package);
+                } else {
+                    crate::println_info!(
+                        "Failed to install {} (may already be installed)",
+                        package
+                    );
+                }
+            }
+            Err(_) => {
+                crate::println_info!("Unable to install redistributables automatically.");
+                crate::println_info!(
+                    "Please install Visual C++ Redistributables and DirectX manually if needed."
+                );
+                break;
+            }
+        }
     }
 }
 
