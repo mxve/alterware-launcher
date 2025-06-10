@@ -1,4 +1,3 @@
-use crate::global::CDN_HOSTS;
 use crate::http;
 use futures::future::join_all;
 use simple_log::*;
@@ -196,9 +195,15 @@ pub struct Hosts {
 
 impl Hosts {
     /// create new rated hosts instance
-    pub async fn new() -> Self {
+    pub async fn new(use_iw4x_cdns: bool) -> Self {
+        let cdn_hosts = if use_iw4x_cdns {
+            crate::global::IW4X_CDN_HOSTS.to_vec()
+        } else {
+            crate::global::CDN_HOSTS.to_vec()
+        };
+
         let mut hosts = Hosts {
-            servers: CDN_HOSTS.to_vec(),
+            servers: cdn_hosts,
             active_index: RwLock::new(None),
         };
 
@@ -271,7 +276,7 @@ impl Hosts {
 }
 
 /// CDN rating function for --rate flag
-pub async fn rate_cdns_and_display() {
+pub async fn rate_cdns_and_display(use_iw4x_cdns: bool) {
     use colored::Colorize;
 
     let (asn, region_str) = crate::http::get_location_info().await;
@@ -285,10 +290,17 @@ pub async fn rate_cdns_and_display() {
     } else {
         println!("User region: {:?}", user_region);
     }
+
     println!("Rating CDNs...");
 
+    let cdn_hosts = if use_iw4x_cdns {
+        crate::global::IW4X_CDN_HOSTS.to_vec()
+    } else {
+        crate::global::CDN_HOSTS.to_vec()
+    };
+
     let mut hosts = Hosts {
-        servers: CDN_HOSTS.to_vec(),
+        servers: cdn_hosts,
         active_index: RwLock::new(None),
     };
 

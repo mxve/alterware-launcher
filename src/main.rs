@@ -693,11 +693,6 @@ async fn main() {
         return;
     }
 
-    if arg_bool(&args, "--rate") {
-        cdn::rate_cdns_and_display().await;
-        return;
-    }
-
     let install_path: PathBuf;
     if let Some(path) = arg_value(&args, "--path") {
         install_path = PathBuf::from(path);
@@ -707,6 +702,24 @@ async fn main() {
         arg_remove_value(&mut args, "-p");
     } else {
         install_path = env::current_dir().unwrap();
+    }
+
+    let mut is_iw4x = false;
+    if args.len() > 1 && args[1] == "iw4x" {
+        is_iw4x = true;
+    } else {
+        let iw4x_reference_files = ["iw4mp.exe", "iw4sp.exe", "iw4x.exe"];
+        for ref_file in iw4x_reference_files.iter() {
+            if install_path.join(ref_file).exists() {
+                is_iw4x = true;
+                break;
+            }
+        }
+    }
+
+    if arg_bool(&args, "--rate") {
+        cdn::rate_cdns_and_display(is_iw4x).await;
+        return;
     }
 
     let mut cfg = config::load(install_path.join("alterware-launcher.json"));
@@ -737,7 +750,9 @@ async fn main() {
         if initial_cdn.is_some() {
             cfg.offline = !global::check_connectivity(initial_cdn).await;
         } else {
-            cfg.offline = !global::check_connectivity_and_rate_cdns().await.await;
+            cfg.offline = !global::check_connectivity_and_rate_cdns(is_iw4x)
+                .await
+                .await;
         }
     }
 
@@ -870,26 +885,6 @@ async fn main() {
         arg_remove(&mut args, "--redist");
         misc::install_dependencies(&install_path, true).await;
         std::process::exit(0);
-    }
-
-    let mut is_iw4x = false;
-
-    if args.len() > 1 && args[1] == "iw4x" {
-        is_iw4x = true;
-    } else {
-        let iw4x_reference_files = ["iw4mp.exe", "iw4sp.exe", "iw4x.exe"];
-        for ref_file in iw4x_reference_files.iter() {
-            if install_path.join(ref_file).exists() {
-                is_iw4x = true;
-                break;
-            }
-        }
-    }
-
-    if is_iw4x {
-        let iw4x_cdn = "https://cdn.iw4x.dev";
-        *MASTER_URL.lock().unwrap() = iw4x_cdn.to_string();
-        crate::println_info!("Using IW4x CDN: {}", iw4x_cdn);
     }
 
     let games_json =
