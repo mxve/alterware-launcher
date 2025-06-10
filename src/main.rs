@@ -872,6 +872,26 @@ async fn main() {
         std::process::exit(0);
     }
 
+    let mut is_iw4x = false;
+    
+    if args.len() > 1 && args[1] == "iw4x" {
+        is_iw4x = true;
+    } else {
+        let iw4x_reference_files = ["iw4mp.exe", "iw4sp.exe", "iw4x.exe"];
+        for ref_file in iw4x_reference_files.iter() {
+            if install_path.join(ref_file).exists() {
+                is_iw4x = true;
+                break;
+            }
+        }
+    }
+    
+    if is_iw4x {
+        let iw4x_cdn = "https://cdn.iw4x.dev";
+        *MASTER_URL.lock().unwrap() = iw4x_cdn.to_string();
+        crate::println_info!("Using IW4x CDN: {}", iw4x_cdn);
+    }
+
     let games_json =
         http_async::get_body_string(format!("{}/games.json", MASTER_URL.lock().unwrap()).as_str())
             .await
