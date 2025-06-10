@@ -873,7 +873,7 @@ async fn main() {
     }
 
     let mut is_iw4x = false;
-    
+
     if args.len() > 1 && args[1] == "iw4x" {
         is_iw4x = true;
     } else {
@@ -885,7 +885,7 @@ async fn main() {
             }
         }
     }
-    
+
     if is_iw4x {
         let iw4x_cdn = "https://cdn.iw4x.dev";
         *MASTER_URL.lock().unwrap() = iw4x_cdn.to_string();
