@@ -1,6 +1,6 @@
 [package]
 name = "alterware-launcher"
-version = "0.10.8"
+version = "0.10.9"
 edition = "2021"
 build = "res/build.rs"
 
@@ -46,4 +46,4 @@ serial_test = "3.2.0"
 [package.metadata.winresource]
 OriginalFilename = "alterware-launcher.exe"
 FileDescription = "AlterWare Launcher"
-ProductName = "github.com/mxve/alterware-launcher"
+ProductName = "github.com/alterware/alterware-launcher"
